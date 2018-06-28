@@ -5,6 +5,7 @@
 #   git config --global core.excludesfile ~/.gitignore_global
 
 /tmp
+/data
 */**/*un~
 */**/*.test
 *un~
@@ -45,3 +46,7 @@ profile.cov
 /dashboard/assets/package-lock.json
 
 **/yarn-error.log
+
+# testnet
+boot.key
+nexty.json
