@@ -50,6 +50,15 @@ func RinkebyGenesis() string {
 	return string(enc)
 }
 
+// DccsGenesis returns the JSON spec to use for the Nexty test network
+func DccsGenesis() string {
+	enc, err := json.Marshal(core.DefaultDccsGenesisBlock())
+	if err != nil {
+		panic(err)
+	}
+	return string(enc)
+}
+
 // FoundationBootnodes returns the enode URLs of the P2P bootstrap nodes operated
 // by the foundation running the V5 discovery protocol.
 func FoundationBootnodes() *Enodes {

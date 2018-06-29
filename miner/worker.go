@@ -35,7 +35,7 @@ import (
 	"github.com/ethereum/go-ethereum/event"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
-	"gopkg.in/fatih/set.v0"
+	set "gopkg.in/fatih/set.v0"
 )
 
 const (
@@ -280,6 +280,9 @@ func (self *worker) update() {
 			} else {
 				// If we're mining, but nothing is being processed, wake on new transactions
 				if self.config.Clique != nil && self.config.Clique.Period == 0 {
+					self.commitNewWork()
+				}
+				if self.config.Dccs != nil && self.config.Dccs.Period == 0 {
 					self.commitNewWork()
 				}
 			}
