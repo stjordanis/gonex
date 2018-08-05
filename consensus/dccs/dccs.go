@@ -673,6 +673,11 @@ func CalcDifficulty(snap *Snapshot, signer common.Address) *big.Int {
 	return new(big.Int).Set(diffNoTurn)
 }
 
+// Close implements consensus.Engine. It's a noop for clique as there is are no background threads.
+func (d *Dccs) Close() error {
+	return nil
+}
+
 // APIs implements consensus.Engine, returning the user facing RPC API to allow
 // controlling the signer voting.
 func (d *Dccs) APIs(chain consensus.ChainReader) []rpc.API {
