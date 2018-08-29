@@ -444,11 +444,11 @@ func (w *worker) mainLoop() {
 				w.updateSnapshot()
 			} else {
 				// If we're mining, but nothing is being processed, wake on new transactions
-				if w.config.Clique != nil && w.config.Clique.Period == 0 {
+				// if w.config.Clique != nil && w.config.Clique.Period == 0 {
+				// 	w.commitNewWork(nil, false)
+				// }
+				if w.config.Dccs != nil && w.config.Dccs.Period == 0 {
 					w.commitNewWork(nil, false)
-				}
-				if self.config.Dccs != nil && self.config.Dccs.Period == 0 {
-					self.commitNewWork()
 				}
 			}
 			atomic.AddInt32(&w.newTxs, int32(len(ev.Txs)))

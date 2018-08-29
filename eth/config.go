@@ -48,8 +48,7 @@ var DefaultConfig = Config{
 	DatabaseCache: 768,
 	TrieCache:     256,
 	TrieTimeout:   60 * time.Minute,
-	GasPrice:      big.NewInt(params.TxGasPrice * params.Shannon), // Zero Transfer Fee
-	MinerGasPrice: big.NewInt(18 * params.Shannon),
+	MinerGasPrice: big.NewInt(params.TxGasPrice * params.Shannon), // Zero Transfer Fee
 	MinerRecommit: 3 * time.Second,
 
 	TxPool: core.DefaultTxPoolConfig,

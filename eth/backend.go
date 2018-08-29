@@ -359,14 +359,6 @@ func (s *Ethereum) StartMining(threads int) error {
 		}
 		th.SetThreads(threads)
 	}
-	if dccs, ok := s.engine.(*dccs.Dccs); ok {
-		wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
-		if wallet == nil || err != nil {
-			log.Error("Etherbase account unavailable locally", "err", err)
-			return fmt.Errorf("signer missing: %v", err)
-		}
-		dccs.Authorize(eb, wallet.SignHash)
-	}
 	// If the miner was not running, initialize it
 	if !s.IsMining() {
 		// Propagate the initial price point to the transaction pool
@@ -381,13 +373,13 @@ func (s *Ethereum) StartMining(threads int) error {
 			log.Error("Cannot start mining without etherbase", "err", err)
 			return fmt.Errorf("etherbase missing: %v", err)
 		}
-		if clique, ok := s.engine.(*clique.Clique); ok {
+		if dccs, ok := s.engine.(*dccs.Dccs); ok {
 			wallet, err := s.accountManager.Find(accounts.Account{Address: eb})
 			if wallet == nil || err != nil {
 				log.Error("Etherbase account unavailable locally", "err", err)
 				return fmt.Errorf("signer missing: %v", err)
 			}
-			clique.Authorize(eb, wallet.SignHash)
+			dccs.Authorize(eb, wallet.SignHash)
 		}
 		// If mining is started, we can disable the transaction rejection mechanism
 		// introduced to speed sync times.
