@@ -18,7 +18,7 @@ package miner
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"math/big"
 	"sync"
 	"sync/atomic"
@@ -111,6 +111,7 @@ const (
 type newWorkReq struct {
 	interrupt *int32
 	noempty   bool
+	timestamp int64
 }
 
 // intervalAdjust represents a resubmitting interval adjustment.
@@ -126,6 +127,9 @@ type worker struct {
 	engine consensus.Engine
 	eth    Backend
 	chain  *core.BlockChain
+
+	gasFloor uint64
+	gasCeil  uint64
 
 	// Subscriptions
 	mux          *event.TypeMux
@@ -171,13 +175,15 @@ type worker struct {
 	resubmitHook func(time.Duration, time.Duration) // Method to call upon updating resubmitting interval.
 }
 
-func newWorker(config *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, recommit time.Duration) *worker {
+func newWorker(config *params.ChainConfig, engine consensus.Engine, eth Backend, mux *event.TypeMux, recommit time.Duration, gasFloor, gasCeil uint64) *worker {
 	worker := &worker{
 		config:             config,
 		engine:             engine,
 		eth:                eth,
 		mux:                mux,
 		chain:              eth.BlockChain(),
+		gasFloor:           gasFloor,
+		gasCeil:            gasCeil,
 		possibleUncles:     make(map[common.Hash]*types.Block),
 		unconfirmed:        newUnconfirmedBlocks(eth.BlockChain(), miningLogAtDepth),
 		pendingTasks:       make(map[common.Hash]*task),
@@ -280,6 +286,7 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 	var (
 		interrupt   *int32
 		minRecommit = recommit // minimal resubmit interval specified by user.
+		timestamp   int64      // timestamp for each round of mining.
 	)
 
 	timer := time.NewTimer(0)
@@ -291,7 +298,7 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 			atomic.StoreInt32(interrupt, s)
 		}
 		interrupt = new(int32)
-		w.newWorkCh <- &newWorkReq{interrupt: interrupt, noempty: noempty}
+		w.newWorkCh <- &newWorkReq{interrupt: interrupt, noempty: noempty, timestamp: timestamp}
 		timer.Reset(recommit)
 		atomic.StoreInt32(&w.newTxs, 0)
 	}
@@ -331,10 +338,12 @@ func (w *worker) newWorkLoop(recommit time.Duration) {
 		select {
 		case <-w.startCh:
 			clearPending(w.chain.CurrentBlock().NumberU64())
+			timestamp = time.Now().Unix()
 			commit(false, commitInterruptNewHead)
 
 		case head := <-w.chainHeadCh:
 			clearPending(head.Block.NumberU64())
+			timestamp = time.Now().Unix()
 			commit(false, commitInterruptNewHead)
 
 		case <-timer.C:
@@ -393,7 +402,7 @@ func (w *worker) mainLoop() {
 	for {
 		select {
 		case req := <-w.newWorkCh:
-			w.commitNewWork(req.interrupt, req.noempty)
+			w.commitNewWork(req.interrupt, req.noempty, req.timestamp)
 
 		case ev := <-w.chainSideCh:
 			if _, exist := w.possibleUncles[ev.Block.Hash()]; exist {
@@ -444,11 +453,8 @@ func (w *worker) mainLoop() {
 				w.updateSnapshot()
 			} else {
 				// If we're mining, but nothing is being processed, wake on new transactions
-				// if w.config.Clique != nil && w.config.Clique.Period == 0 {
-				// 	w.commitNewWork(nil, false)
-				// }
 				if w.config.Dccs != nil && w.config.Dccs.Period == 0 {
-					w.commitNewWork(nil, false)
+					w.commitNewWork(nil, false, time.Now().Unix())
 				}
 			}
 			atomic.AddInt32(&w.newTxs, int32(len(ev.Txs)))
@@ -618,13 +624,16 @@ func (w *worker) makeCurrent(parent *types.Block, header *types.Header) error {
 func (w *worker) commitUncle(env *environment, uncle *types.Header) error {
 	hash := uncle.Hash()
 	if env.uncles.Contains(hash) {
-		return fmt.Errorf("uncle not unique")
+		return errors.New("uncle not unique")
+	}
+	if env.header.ParentHash == uncle.ParentHash {
+		return errors.New("uncle is sibling")
 	}
 	if !env.ancestors.Contains(uncle.ParentHash) {
-		return fmt.Errorf("uncle's parent unknown (%x)", uncle.ParentHash[0:4])
+		return errors.New("uncle's parent unknown")
 	}
 	if env.family.Contains(hash) {
-		return fmt.Errorf("uncle already in family (%x)", hash)
+		return errors.New("uncle already included")
 	}
 	env.uncles.Add(uncle.Hash())
 	return nil
@@ -788,20 +797,19 @@ func (w *worker) commitTransactions(txs *types.TransactionsByPriceAndNonce, coin
 }
 
 // commitNewWork generates several new sealing tasks based on the parent block.
-func (w *worker) commitNewWork(interrupt *int32, noempty bool) {
+func (w *worker) commitNewWork(interrupt *int32, noempty bool, timestamp int64) {
 	w.mu.RLock()
 	defer w.mu.RUnlock()
 
 	tstart := time.Now()
 	parent := w.chain.CurrentBlock()
 
-	tstamp := tstart.Unix()
-	if parent.Time().Cmp(new(big.Int).SetInt64(tstamp)) >= 0 {
-		tstamp = parent.Time().Int64() + 1
+	if parent.Time().Cmp(new(big.Int).SetInt64(timestamp)) >= 0 {
+		timestamp = parent.Time().Int64() + 1
 	}
 	// this will ensure we're not going off too far in the future
-	if now := time.Now().Unix(); tstamp > now+1 {
-		wait := time.Duration(tstamp-now) * time.Second
+	if now := time.Now().Unix(); timestamp > now+1 {
+		wait := time.Duration(timestamp-now) * time.Second
 		log.Info("Mining too far in the future", "wait", common.PrettyDuration(wait))
 		time.Sleep(wait)
 	}
@@ -810,9 +818,9 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool) {
 	header := &types.Header{
 		ParentHash: parent.Hash(),
 		Number:     num.Add(num, common.Big1),
-		GasLimit:   core.CalcGasLimit(parent),
+		GasLimit:   core.CalcGasLimit(parent, w.gasFloor, w.gasCeil),
 		Extra:      w.extra,
-		Time:       big.NewInt(tstamp),
+		Time:       big.NewInt(timestamp),
 	}
 	// Only set the coinbase if our consensus engine is running (avoid spurious block rewards)
 	if w.isRunning() {
@@ -850,28 +858,23 @@ func (w *worker) commitNewWork(interrupt *int32, noempty bool) {
 	if w.config.DAOForkSupport && w.config.DAOForkBlock != nil && w.config.DAOForkBlock.Cmp(header.Number) == 0 {
 		misc.ApplyDAOHardFork(env.state)
 	}
-
-	// compute uncles for the new block.
-	var (
-		uncles    []*types.Header
-		badUncles []common.Hash
-	)
+	// Accumulate the uncles for the current block
+	for hash, uncle := range w.possibleUncles {
+		if uncle.NumberU64()+staleThreshold <= header.Number.Uint64() {
+			delete(w.possibleUncles, hash)
+		}
+	}
+	uncles := make([]*types.Header, 0, 2)
 	for hash, uncle := range w.possibleUncles {
 		if len(uncles) == 2 {
 			break
 		}
 		if err := w.commitUncle(env, uncle.Header()); err != nil {
-			log.Trace("Bad uncle found and will be removed", "hash", hash)
-			log.Trace(fmt.Sprint(uncle))
-
-			badUncles = append(badUncles, hash)
+			log.Trace("Possible uncle rejected", "hash", hash, "reason", err)
 		} else {
 			log.Debug("Committing new uncle to block", "hash", hash)
 			uncles = append(uncles, uncle.Header())
 		}
-	}
-	for _, hash := range badUncles {
-		delete(w.possibleUncles, hash)
 	}
 
 	if !noempty {

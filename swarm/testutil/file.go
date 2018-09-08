@@ -14,18 +14,31 @@
 // You should have received a copy of the GNU Lesser General Public License
 // along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
 
-package whisperv6
+package testutil
 
-// Config represents the configuration state of a whisper node.
-type Config struct {
-	MaxMessageSize                        uint32  `toml:",omitempty"`
-	MinimumAcceptedPOW                    float64 `toml:",omitempty"`
-	RestrictConnectionBetweenLightClients bool    `toml:",omitempty"`
-}
+import (
+	"io"
+	"io/ioutil"
+	"os"
+	"strings"
+	"testing"
+)
 
-// DefaultConfig represents (shocker!) the default configuration.
-var DefaultConfig = Config{
-	MaxMessageSize:                        DefaultMaxMessageSize,
-	MinimumAcceptedPOW:                    DefaultMinimumPoW,
-	RestrictConnectionBetweenLightClients: true,
+// TempFileWithContent is a helper function that creates a temp file that contains the following string content then closes the file handle
+// it returns the complete file path
+func TempFileWithContent(t *testing.T, content string) string {
+	tempFile, err := ioutil.TempFile("", "swarm-temp-file")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = io.Copy(tempFile, strings.NewReader(content))
+	if err != nil {
+		os.RemoveAll(tempFile.Name())
+		t.Fatal(err)
+	}
+	if err = tempFile.Close(); err != nil {
+		t.Fatal(err)
+	}
+	return tempFile.Name()
 }
