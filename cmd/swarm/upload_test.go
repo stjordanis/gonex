@@ -32,6 +32,7 @@ import (
 
 	"github.com/ethereum/go-ethereum/log"
 	swarm "github.com/ethereum/go-ethereum/swarm/api/client"
+	"github.com/ethereum/go-ethereum/swarm/testutil"
 	"github.com/mattn/go-colorable"
 )
 
@@ -242,8 +243,7 @@ func testCLISwarmUpRecursive(toEncrypt bool, t *testing.T) {
 		}
 		defer os.RemoveAll(tmpDownload)
 		bzzLocator := "bzz:/" + hash
-		flagss := []string{}
-		flagss = []string{
+		flagss := []string{
 			"--bzzapi", cluster.Nodes[0].URL,
 			"down",
 			"--recursive",
@@ -298,8 +298,8 @@ func TestCLISwarmUpDefaultPath(t *testing.T) {
 }
 
 func testCLISwarmUpDefaultPath(toEncrypt bool, absDefaultPath bool, t *testing.T) {
-	cluster := newTestCluster(t, 1)
-	defer cluster.Shutdown()
+	srv := testutil.NewTestSwarmServer(t, serverFunc, nil)
+	defer srv.Close()
 
 	tmp, err := ioutil.TempDir("", "swarm-defaultpath-test")
 	if err != nil {
@@ -323,7 +323,7 @@ func testCLISwarmUpDefaultPath(toEncrypt bool, absDefaultPath bool, t *testing.T
 
 	args := []string{
 		"--bzzapi",
-		cluster.Nodes[0].URL,
+		srv.URL,
 		"--recursive",
 		"--defaultpath",
 		defaultPath,
@@ -340,7 +340,7 @@ func testCLISwarmUpDefaultPath(toEncrypt bool, absDefaultPath bool, t *testing.T
 	up.ExpectExit()
 	hash := matches[0]
 
-	client := swarm.NewClient(cluster.Nodes[0].URL)
+	client := swarm.NewClient(srv.URL)
 
 	m, isEncrypted, err := client.DownloadManifest(hash)
 	if err != nil {
