@@ -1161,6 +1161,23 @@ func (d *Dccs) calculateRewards(chain consensus.ChainReader, state *state.StateD
 		r := i
 		if r > 5 {
 			r = 5
+	cp := (number / d.config.Epoch) * d.config.Epoch
+	checkpoint := chain.GetHeaderByNumber(cp)
+	if checkpoint != nil {
+		root, _ := chain.StateAt(checkpoint.Root)
+		// Check if eb already sealed and received reward in the current sealing round
+		snap, _ := d.snapshot2(chain, number, header.Hash(), nil)
+		len := uint64(len(snap.Signers))
+		start := cp + (number-cp)/len*len
+		for i := start; i < number; i++ {
+			h := chain.GetHeaderByNumber(i)
+			if h != nil {
+				sig, _ := ecrecover(h, d.signatures)
+				if sig == header.Coinbase {
+					log.Trace("Sealer already received reward in current sealing round", "coinbase", d.signer)
+					return
+				}
+			}
 		}
 		totalReward := new(big.Int).Mul(totalSupply, rewards[r])
 		totalReward = totalReward.Div(totalReward, big.NewInt(1e+5))
