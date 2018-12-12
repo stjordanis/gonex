@@ -1200,6 +1200,10 @@ func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, hea
 	limit := len(snap.Signers) / 2
 	num, hash := number-1, header.ParentHash
 	for i := 1; i <= limit; i++ {
+		// shortcut for genesis block because it has no signature
+		if num == 0 {
+			break
+		}
 		var h *types.Header
 		if len(parents) > 0 {
 			// If we have explicit parents, pick from there (enforced)
