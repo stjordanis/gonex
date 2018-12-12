@@ -145,6 +145,19 @@ func (b *SimulatedBackend) NonceAt(ctx context.Context, contract common.Address,
 	return statedb.GetNonce(contract), nil
 }
 
+// ForEachStorageAt returns func to read all keys, values in the storage
+func (b *SimulatedBackend) ForEachStorageAt(ctx context.Context, contract common.Address, blockNumber *big.Int, f func(key, val common.Hash) bool) error {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if blockNumber != nil && blockNumber.Cmp(b.blockchain.CurrentBlock().Number()) != 0 {
+		return errBlockNumberUnsupported
+	}
+	statedb, _ := b.blockchain.State()
+	statedb.ForEachStorage(contract, f)
+	return nil
+}
+
 // StorageAt returns the value of key in the storage of an account in the blockchain.
 func (b *SimulatedBackend) StorageAt(ctx context.Context, contract common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error) {
 	b.mu.Lock()
