@@ -569,7 +569,13 @@ func (d *Dccs) snapshot2(chain consensus.ChainReader, number uint64, hash common
 	)
 	for snap == nil {
 		// Get signers from Nexty staking smart contract at the latest epoch checkpoint from block number
-		cp := ((number+1)/d.config.Epoch)*d.config.Epoch - 1
+		cp := ((number + 1) / d.config.Epoch) * d.config.Epoch
+		// Get genesis block as checkpoint for 1st epoch
+		if cp <= 0 {
+			cp = 0
+		} else {
+			cp = cp - 1
+		}
 		checkpoint := chain.GetHeaderByNumber(cp)
 		if checkpoint != nil {
 			hash := checkpoint.Hash()
@@ -811,7 +817,13 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	header.Nonce = types.BlockNonce{}
 	// Get the beneficiary of signer from smart contract and set to header's coinbase to give sealing reward later
 	number := header.Number.Uint64()
-	cp := (number/d.config.Epoch)*d.config.Epoch - 1
+	cp := (number / d.config.Epoch) * d.config.Epoch
+	// get genesis block as checkpoint for 1st epoch
+	if cp <= 0 {
+		cp = 0
+	} else {
+		cp = cp - 1
+	}
 	checkpoint := chain.GetHeaderByNumber(cp)
 	if checkpoint != nil {
 		root, _ := chain.StateAt(checkpoint.Root)
@@ -1144,7 +1156,7 @@ func (d *Dccs) Close() error {
 func (d *Dccs) APIs(chain consensus.ChainReader) []rpc.API {
 	return []rpc.API{{
 		Namespace: "dccs",
-		Version:   "1.0",
+		Version:   "1.1",
 		Service:   &API{chain: chain, dccs: d},
 		Public:    false,
 	}}
@@ -1188,6 +1200,10 @@ func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, hea
 	limit := len(snap.Signers) / 2
 	num, hash := number-1, header.ParentHash
 	for i := 1; i <= limit; i++ {
+		// shortcut for genesis block because it has no signature
+		if num == 0 {
+			break
+		}
 		var h *types.Header
 		if len(parents) > 0 {
 			// If we have explicit parents, pick from there (enforced)

@@ -316,14 +316,14 @@ func DefaultGenesisBlock() *Genesis {
 	}
 }
 
-// DefaultTestnetGenesisBlock returns the Ropsten network genesis block.
+// DefaultTestnetGenesisBlock returns the Dccs network genesis block.
 func DefaultTestnetGenesisBlock() *Genesis {
 	return &Genesis{
 		Config:     params.TestnetChainConfig,
-		Nonce:      66,
-		ExtraData:  hexutil.MustDecode("0x3535353535353535353535353535353535353535353535353535353535353535"),
-		GasLimit:   16777216,
-		Difficulty: big.NewInt(1048576),
+		Nonce:      0,
+		ExtraData:  hexutil.MustDecode("0x00000000000000000000000000000000000000000000000000000000000000001dee87fc224a41c8699a3d8a8557918be7e4795a8e2a6a6690156004185457c0ee70675bc4c1b1a5d88d2aeb036d162db43e1b18ebd820cbd99d91b20000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"),
+		GasLimit:   14000000,
+		Difficulty: big.NewInt(1),
 		Alloc:      decodePrealloc(testnetAllocData),
 	}
 }

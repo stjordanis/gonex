@@ -48,7 +48,5 @@ profile.cov
 **/yarn-error.log
 
 # testnet
-boot.key
-nexty.json
 *.log
 passwd

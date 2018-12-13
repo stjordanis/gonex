@@ -25,18 +25,16 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-
-	// MainnetGenesisHash = common.HexToHash("0x080eeb525df0e852343ba13afedf2b256f0991c1b18797e18863fd7b4ab3574b")
-	MainnetGenesisHash = common.HexToHash("0x4564602ac9c6057dc0e15e952275ac2b9e99cddb8995d8915652aca101bd9809")
-	TestnetGenesisHash = common.HexToHash("0x4564602ac9c6057dc0e15e952275ac2b9e99cddb8995d8915652aca101bd9809")
+	
+	MainnetGenesisHash = common.HexToHash("0x080eeb525df0e852343ba13afedf2b256f0991c1b18797e18863fd7b4ab3574b")
+	TestnetGenesisHash = common.HexToHash("0x004803b4cef4470352041a5da08440b8a280b3b9696be3430c2de831de4233d5")
 	RinkebyGenesisHash = common.HexToHash("0x6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177")
 )
 
 var (
 	// MainnetChainConfig is the chain parameters to run a node on the main network.
 	MainnetChainConfig = &ChainConfig{
-		// ChainID:             big.NewInt(66666),
-		ChainID:             big.NewInt(32588),
+		ChainID:             big.NewInt(66666),
 		HomesteadBlock:      big.NewInt(1),
 		DAOForkBlock:        nil,
 		DAOForkSupport:      true,
@@ -45,12 +43,12 @@ var (
 		EIP155Block:         big.NewInt(3),
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
-		DccsBlock:           big.NewInt(120),
-		NtfContractAddress:  common.HexToAddress("0xa5d4798d4292caffa5375bd66195d1d6ba1bed81"),
 		ConstantinopleBlock: nil,
+		DccsBlock:           nil,
+		NtfContractAddress:  common.HexToAddress("0x0"),
 		Dccs: &DccsConfig{
 			Period: 2,
-			Epoch:  60,
+			Epoch:  30000,
 		},
 	}
 
@@ -63,7 +61,7 @@ var (
 		BloomRoot:    common.HexToHash("0x8006c5e44b14d90d7cc9cd5fa1cb48cf53697ee3bbbf4b76fdfa70b0242500a9"),
 	}
 
-	// TestnetChainConfig contains the chain parameters to run a node on the Ropsten test network.
+	// TestnetChainConfig contains the chain parameters to run a node on the Dccs test network.
 	TestnetChainConfig = &ChainConfig{
 		ChainID:             big.NewInt(111111),
 		HomesteadBlock:      big.NewInt(1),
@@ -74,12 +72,12 @@ var (
 		EIP155Block:         big.NewInt(3),
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
-		DccsBlock:           big.NewInt(120),
-		NtfContractAddress:  common.HexToAddress("0xa5d4798d4292caffa5375bd66195d1d6ba1bed81"),
-		ConstantinopleBlock: nil,
+		ConstantinopleBlock: big.NewInt(5),
+		DccsBlock:           big.NewInt(0),
+		NtfContractAddress:  common.HexToAddress("0xcafecafecafecafecafecafecafecafecafecafe"),
 		Dccs: &DccsConfig{
 			Period: 2,
-			Epoch:  60,
+			Epoch:  600,
 		},
 	}
 
