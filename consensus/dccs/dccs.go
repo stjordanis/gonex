@@ -1156,7 +1156,7 @@ func (d *Dccs) Close() error {
 func (d *Dccs) APIs(chain consensus.ChainReader) []rpc.API {
 	return []rpc.API{{
 		Namespace: "dccs",
-		Version:   "1.0",
+		Version:   "1.1",
 		Service:   &API{chain: chain, dccs: d},
 		Public:    false,
 	}}
