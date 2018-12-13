@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -28,16 +29,15 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"context"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
-	"github.com/ethereum/go-ethereum/contracts/nexty/contract"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/contracts/nexty/contract"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -154,33 +154,7 @@ func (w *wizard) makeGenesis() {
 		for i, signer := range signers {
 			copy(genesis.ExtraData[32+i*common.AddressLength:], signer[:])
 		}
-
-		// Consensus all set, just ask for initial funds and go
-		fmt.Println()
-		fmt.Println("Which accounts should be pre-funded? (advisable at least one)")
-		for {
-			// Read the address of the account to fund
-			if address := w.readAddress(); address != nil {
-				genesis.Alloc[*address] = core.GenesisAccount{
-					Balance: new(big.Int).Lsh(big.NewInt(1), 256-7), // 2^256 / 128 (allow many pre-funds without balance overflows)
-				}
-				continue
-			}
-			break
-		}
-		fmt.Println()
-		fmt.Println("Should the precompile-addresses (0x1 .. 0xff) be pre-funded with 1 wei? (advisable yes)")
-		if w.readDefaultYesNo(true) {
-			// Add a batch of precompile balances to avoid them getting deleted
-			for i := int64(0); i < 256; i++ {
-				genesis.Alloc[common.BigToAddress(big.NewInt(i))] = core.GenesisAccount{Balance: big.NewInt(1)}
-			}
-		}
-		// Query the user for some custom extras
-		fmt.Println()
-		fmt.Println("Specify your chain/network ID if you want an explicit one (default = random)")
-		genesis.Config.ChainID = new(big.Int).SetUint64(uint64(w.readDefaultInt(rand.Intn(65536))))
-
+		
 		fmt.Println()
 		fmt.Printf("Which block should Dccs come into effect? (default = %v)\n", genesis.Config.DccsBlock)
 		genesis.Config.DccsBlock = w.readDefaultBigInt(genesis.Config.DccsBlock)
@@ -214,22 +188,47 @@ func (w *wizard) makeGenesis() {
 			log.Info("DecodeBytes", "value", val.String(), "decode", storage[key].String())
 			return true
 		}
-		sim.ForEachStorageAt(ctx, nextyAddress, nil, f)	
+		sim.ForEachStorageAt(ctx, nextyAddress, nil, f)
 		genesis.Alloc[genesis.Config.NtfContractAddress] = core.GenesisAccount{
 			Balance: big.NewInt(0),
-			Code: code,
+			Code:    code,
 			Storage: storage,
 		}
 
-		// All done, store the genesis and flush to disk
-		log.Info("Configured new genesis block")
-
-		w.conf.Genesis = genesis
-		w.conf.flush()
-
 	default:
 		log.Crit("Invalid consensus engine choice", "choice", choice)
-	}	
+	}
+	// Consensus all set, just ask for initial funds and go
+	fmt.Println()
+	fmt.Println("Which accounts should be pre-funded? (advisable at least one)")
+	for {
+		// Read the address of the account to fund
+		if address := w.readAddress(); address != nil {
+			genesis.Alloc[*address] = core.GenesisAccount{
+				Balance: new(big.Int).Lsh(big.NewInt(1), 256-7), // 2^256 / 128 (allow many pre-funds without balance overflows)
+			}
+			continue
+		}
+		break
+	}
+	fmt.Println()
+	fmt.Println("Should the precompile-addresses (0x1 .. 0xff) be pre-funded with 1 wei? (advisable yes)")
+	if w.readDefaultYesNo(true) {
+		// Add a batch of precompile balances to avoid them getting deleted
+		for i := int64(0); i < 256; i++ {
+			genesis.Alloc[common.BigToAddress(big.NewInt(i))] = core.GenesisAccount{Balance: big.NewInt(1)}
+		}
+	}
+	// Query the user for some custom extras
+	fmt.Println()
+	fmt.Println("Specify your chain/network ID if you want an explicit one (default = random)")
+	genesis.Config.ChainID = new(big.Int).SetUint64(uint64(w.readDefaultInt(rand.Intn(65536))))
+
+	// All done, store the genesis and flush to disk
+	log.Info("Configured new genesis block")
+
+	w.conf.Genesis = genesis
+	w.conf.flush()
 }
 
 // importGenesis imports a Geth genesis spec into puppeth.
