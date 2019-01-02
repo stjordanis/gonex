@@ -38,6 +38,9 @@ import (
 const (
 	// chainHeadChanSize is the size of channel listening to ChainHeadEvent.
 	chainHeadChanSize = 10
+
+	// chainChanSize is the size of channel listening to ChainEvent.
+	chainChanSize = 20
 )
 
 var (
@@ -119,6 +122,7 @@ type blockChain interface {
 	StateAt(root common.Hash) (*state.StateDB, error)
 
 	SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription
+	SubscribeChainEvent(ch chan<- ChainEvent) event.Subscription
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
@@ -135,6 +139,7 @@ type TxPoolConfig struct {
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
 	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
 	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
+	BloomSize    uint64 // Maximum number of recent blocks to make the bloom section
 
 	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
 }
@@ -152,6 +157,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	GlobalSlots:  4096,
 	AccountQueue: 64,
 	GlobalQueue:  1024,
+	BloomSize:    65536,
 
 	Lifetime: 3 * time.Hour,
 }
@@ -191,6 +197,8 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan ChainHeadEvent
 	chainHeadSub event.Subscription
+	chainCh      chan ChainEvent
+	chainSub     event.Subscription
 	signer       types.Signer
 	mu           sync.RWMutex
 
@@ -204,6 +212,7 @@ type TxPool struct {
 	pending map[common.Address]*txList   // All currently processable transactions
 	queue   map[common.Address]*txList   // Queued but non-processable transactions
 	beats   map[common.Address]time.Time // Last heartbeat from each known account
+	blooms  []types.Bloom                // All recent blocks' bloom bits for account/address
 	all     *txLookup                    // All transactions to allow lookups
 	priced  *txPricedList                // All transactions sorted by price
 
@@ -227,8 +236,10 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		pending:     make(map[common.Address]*txList),
 		queue:       make(map[common.Address]*txList),
 		beats:       make(map[common.Address]time.Time),
+		blooms:      make([]types.Bloom, config.BloomSize),
 		all:         newTxLookup(),
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
+		chainCh:     make(chan ChainEvent, chainChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
 	}
 	pool.locals = newAccountSet(pool.signer)
@@ -252,6 +263,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 	}
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.chain.SubscribeChainHeadEvent(pool.chainHeadCh)
+	pool.chainSub = pool.chain.SubscribeChainEvent(pool.chainCh)
 
 	// Start the event loop and return
 	pool.wg.Add(1)
@@ -284,6 +296,18 @@ func (pool *TxPool) loop() {
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
+		// Handle ChainEvent
+		case ev := <-pool.chainCh:
+			if ev.Block != nil {
+				pool.mu.Lock()
+				if pool.chainconfig.IsHomestead(ev.Block.Number()) {
+					pool.homestead = true
+				}
+				bloom := types.CreateTxsBloom(pool.signer, ev.Block.Transactions())
+				index := ev.Block.Number().Uint64() % pool.config.BloomSize
+				pool.blooms[index] = bloom
+				pool.mu.Unlock()
+			}
 		// Handle ChainHeadEvent
 		case ev := <-pool.chainHeadCh:
 			if ev.Block != nil {
