@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"math/big"
 
+	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/crypto"
 )
@@ -108,6 +109,33 @@ func LogsBloom(logs []*Log) *big.Int {
 			bin.Or(bin, bloom9(b[:]))
 		}
 	}
+
+	return bin
+}
+
+func CreateTxsBloom(signer Signer, txs Transactions) Bloom {
+	bin := new(big.Int)
+	for _, tx := range txs {
+		from, _ := Sender(signer, tx)
+		bin.Or(bin, AddressBloom(&from))
+		bin.Or(bin, AddressBloom(tx.To()))
+	}
+
+	return BytesToBloom(bin.Bytes())
+}
+
+func CreateAddressesBloom(addresses ...*common.Address) Bloom {
+	bin := new(big.Int)
+	for _, addr := range addresses {
+		bin.Or(bin, AddressBloom(addr))
+	}
+
+	return BytesToBloom(bin.Bytes())
+}
+
+func AddressBloom(addr *common.Address) *big.Int {
+	bin := new(big.Int)
+	bin.Or(bin, bloom9(addr.Bytes()))
 
 	return bin
 }
