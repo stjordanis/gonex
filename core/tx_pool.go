@@ -63,6 +63,10 @@ var (
 	// with a different one without the required price bump.
 	ErrReplaceUnderpriced = errors.New("replacement transaction underpriced")
 
+	// ErrReplaceUnderparity is returned if a transaction is attempted to be replaced
+	// with a different one without the required parity bump.
+	ErrReplaceUnderparity = errors.New("replacement transaction underparity")
+
 	// ErrInsufficientFunds is returned if the total cost of executing a transaction
 	// is higher than the balance of the user's account.
 	ErrInsufficientFunds = errors.New("insufficient funds for gas * price + value")
@@ -106,6 +110,7 @@ var (
 	// General tx metrics
 	invalidTxCounter     = metrics.NewRegisteredCounter("txpool/invalid", nil)
 	underpricedTxCounter = metrics.NewRegisteredCounter("txpool/underpriced", nil)
+	underparityTxCounter = metrics.NewRegisteredCounter("txpool/underparity", nil)
 )
 
 // TxStatus is the current status of a transaction as seen by the pool.
@@ -136,8 +141,10 @@ type TxPoolConfig struct {
 	Journal   string           // Journal of local transactions to survive node restarts
 	Rejournal time.Duration    // Time interval to regenerate the local transaction journal
 
-	PriceLimit uint64 // Minimum gas price to enforce for acceptance into the pool
-	PriceBump  uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
+	PriceLimit  uint64  // Minimum gas price to enforce for acceptance into the pool
+	PriceBump   uint64  // Minimum price bump percentage to replace an already existing transaction (nonce)
+	ParityLimit float64 // Minimum parity to enforce for acceptance into the pool
+	ParityBump  uint64  // Minimum parity bump percentage to replace an already existing transaction (nonce)
 
 	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
@@ -154,8 +161,10 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	PriceLimit: 1,
-	PriceBump:  10,
+	PriceLimit:  1,
+	PriceBump:   10,
+	ParityLimit: 0.0,
+	ParityBump:  5,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -246,6 +255,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		chainCh:     make(chan ChainEvent, chainChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
+		parity:      config.ParityLimit,
 	}
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
@@ -451,7 +461,7 @@ func (pool *TxPool) reset(oldHead, newHead *types.Header) {
 	// validate the pool of pending transactions, this will remove
 	// any transactions that have been included in the block or
 	// have been invalidated because of another transaction (e.g.
-	// higher gas price)
+	// higher parity)
 	pool.demoteUnexecutables()
 
 	// Update all accounts to the latest known pending nonce
@@ -504,6 +514,14 @@ func (pool *TxPool) SetGasPrice(price *big.Int) {
 	// 	pool.removeTx(tx.Hash(), false)
 	// }
 	log.Info("Transaction pool price threshold updated", "price", price)
+}
+
+// Parity returns the current parity enforced by the transaction pool.
+func (pool *TxPool) Parity() float64 {
+	pool.mu.RLock()
+	defer pool.mu.RUnlock()
+
+	return pool.parity
 }
 
 // SetParity updates the minimum parity required by the transaction pool for a
@@ -676,19 +694,19 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 		invalidTxCounter.Inc(1)
 		return false, err
 	}
-	// If the transaction pool is full, discard underpriced transactions
+	// If the transaction pool is full, discard underparity transactions
 	if uint64(pool.all.Count()) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
-		// If the new transaction is underpriced, don't accept it
+		// If the new transaction is underparity, don't accept it
 		if !local && pool.parities.Underparity(tx, pool.locals) {
-			log.Trace("Discarding underpriced transaction", "hash", hash, "price", tx.GasPrice())
-			underpricedTxCounter.Inc(1)
+			log.Trace("Discarding underparity transaction", "hash", hash, "parity", tx.Parity())
+			underparityTxCounter.Inc(1)
 			return false, ErrUnderpriced
 		}
 		// New transaction is better than our worse ones, make room for it
 		drop := pool.parities.Discard(pool.all.Count()-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
 		for _, tx := range drop {
-			log.Trace("Discarding freshly underpriced transaction", "hash", tx.Hash(), "price", tx.GasPrice())
-			underpricedTxCounter.Inc(1)
+			log.Trace("Discarding freshly underparity transaction", "hash", tx.Hash(), "parity", tx.Parity())
+			underparityTxCounter.Inc(1)
 			pool.removeTx(tx.Hash(), false)
 		}
 	}
@@ -696,7 +714,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	from, _ := types.Sender(pool.signer, tx) // already validated
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
-		inserted, old := list.Add(tx, pool.config.PriceBump)
+		inserted, old := list.Add(tx, pool.config.ParityBump)
 		if !inserted {
 			pendingDiscardCounter.Inc(1)
 			return false, ErrReplaceUnderpriced
@@ -745,11 +763,11 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
-	inserted, old := pool.queue[from].Add(tx, pool.config.PriceBump)
+	inserted, old := pool.queue[from].Add(tx, pool.config.ParityBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		queuedDiscardCounter.Inc(1)
-		return false, ErrReplaceUnderpriced
+		return false, ErrReplaceUnderparity
 	}
 	// Discard any previous transaction and mark this
 	if old != nil {
@@ -787,7 +805,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	list := pool.pending[addr]
 
-	inserted, old := list.Add(tx, pool.config.PriceBump)
+	inserted, old := list.Add(tx, pool.config.ParityBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		pool.all.Remove(hash)
