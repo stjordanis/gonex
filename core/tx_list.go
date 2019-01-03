@@ -518,3 +518,151 @@ func (l *txPricedList) Discard(count int, local *accountSet) types.Transactions 
 	}
 	return drop
 }
+
+// parityHeap is a heap.Interface implementation over transactions for retrieving
+// parity-sorted transactions to discard when the pool fills up.
+type parityHeap []*types.Transaction
+
+func (h parityHeap) Len() int      { return len(h) }
+func (h parityHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
+
+func (h parityHeap) Less(i, j int) bool {
+	return h[i].Parity() >= h[j].Parity()
+}
+
+func (h *parityHeap) Push(x interface{}) {
+	*h = append(*h, x.(*types.Transaction))
+}
+
+func (h *parityHeap) Pop() interface{} {
+	old := *h
+	n := len(old)
+	x := old[n-1]
+	*h = old[0 : n-1]
+	return x
+}
+
+// txParityList is a parity-sorted heap to allow operating on transactions pool
+// contents in a parity-incrementing way.
+type txParityList struct {
+	all    *txLookup   // Pointer to the map of all transactions
+	items  *parityHeap // Heap of parity of all the stored transactions
+	stales int         // Number of stale parity points to (re-heap trigger)
+}
+
+// newTxParitydList creates a new parity-sorted transaction heap.
+func newTxParitydList(all *txLookup) *txParityList {
+	return &txParityList{
+		all:   all,
+		items: new(parityHeap),
+	}
+}
+
+// Put inserts a new transaction into the heap.
+func (l *txParityList) Put(tx *types.Transaction) {
+	heap.Push(l.items, tx)
+}
+
+// Removed notifies the parity transaction list that an old transaction dropped
+// from the pool. The list will just keep a counter of stale objects and update
+// the heap if a large enough ratio of transactions go stale.
+func (l *txParityList) Removed() {
+	// Bump the stale counter, but exit if still too low (< 25%)
+	l.stales++
+	if l.stales <= len(*l.items)/4 {
+		return
+	}
+	// Seems we've reached a critical number of stale transactions, reheap
+	reheap := make(parityHeap, 0, l.all.Count())
+
+	l.stales, l.items = 0, &reheap
+	l.all.Range(func(hash common.Hash, tx *types.Transaction) bool {
+		*l.items = append(*l.items, tx)
+		return true
+	})
+	heap.Init(l.items)
+}
+
+// Cap finds all the transactions below the given parity threshold, drops them
+// from the priced list and returns them for further removal from the entire pool.
+func (l *txParityList) Cap(threshold float64, local *accountSet) types.Transactions {
+	drop := make(types.Transactions, 0, 128) // Remote underparity transactions to drop
+	save := make(types.Transactions, 0, 64)  // Local underparity transactions to keep
+
+	for len(*l.items) > 0 {
+		// Discard stale transactions if found during cleanup
+		tx := heap.Pop(l.items).(*types.Transaction)
+		if l.all.Get(tx.Hash()) == nil {
+			l.stales--
+			continue
+		}
+		// Stop the discards if we've reached the threshold
+		if tx.Parity() >= threshold {
+			save = append(save, tx)
+			break
+		}
+		// Non stale transaction found, discard unless local
+		if local.containsTx(tx) {
+			save = append(save, tx)
+		} else {
+			drop = append(drop, tx)
+		}
+	}
+	for _, tx := range save {
+		heap.Push(l.items, tx)
+	}
+	return drop
+}
+
+// Underparity checks whether a transaction is paritier than (or as parity as) the
+// lowest parity transaction currently being tracked.
+func (l *txParityList) Underparity(tx *types.Transaction, local *accountSet) bool {
+	// Local transactions cannot be underparity
+	if local.containsTx(tx) {
+		return false
+	}
+	// Discard stale parity points if found at the heap start
+	for len(*l.items) > 0 {
+		head := []*types.Transaction(*l.items)[0]
+		if l.all.Get(head.Hash()) == nil {
+			l.stales--
+			heap.Pop(l.items)
+			continue
+		}
+		break
+	}
+	// Check if the transaction is underparity or not
+	if len(*l.items) == 0 {
+		log.Error("Parity query for empty pool") // This cannot happen, print to catch programming errors
+		return false
+	}
+	lowest := []*types.Transaction(*l.items)[0]
+	return lowest.Parity() >= tx.Parity()
+}
+
+// Discard finds a number of most underpriced transactions, removes them from the
+// parity list and returns them for further removal from the entire pool.
+func (l *txParityList) Discard(count int, local *accountSet) types.Transactions {
+	drop := make(types.Transactions, 0, count) // Remote underparity transactions to drop
+	save := make(types.Transactions, 0, 64)    // Local underparity transactions to keep
+
+	for len(*l.items) > 0 && count > 0 {
+		// Discard stale transactions if found during cleanup
+		tx := heap.Pop(l.items).(*types.Transaction)
+		if l.all.Get(tx.Hash()) == nil {
+			l.stales--
+			continue
+		}
+		// Non stale transaction found, discard unless local
+		if local.containsTx(tx) {
+			save = append(save, tx)
+		} else {
+			drop = append(drop, tx)
+			count--
+		}
+	}
+	for _, tx := range save {
+		heap.Push(l.items, tx)
+	}
+	return drop
+}
