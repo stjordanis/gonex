@@ -144,7 +144,6 @@ type TxPoolConfig struct {
 	PriceLimit  uint64  // Minimum gas price to enforce for acceptance into the pool
 	PriceBump   uint64  // Minimum price bump percentage to replace an already existing transaction (nonce)
 	ParityLimit float64 // Minimum parity to enforce for acceptance into the pool
-	ParityBump  uint64  // Minimum parity bump percentage to replace an already existing transaction (nonce)
 
 	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
@@ -164,7 +163,6 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	PriceLimit:  1,
 	PriceBump:   10,
 	ParityLimit: 0.0,
-	ParityBump:  5,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -253,7 +251,6 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		blooms:      make([]types.Bloom, config.BloomSize),
 		all:         newTxLookup(),
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
-		chainCh:     make(chan ChainEvent, chainChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
 		parity:      config.ParityLimit,
 	}
@@ -278,7 +275,6 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 	}
 	// Subscribe events from blockchain
 	pool.chainHeadSub = pool.chain.SubscribeChainHeadEvent(pool.chainHeadCh)
-	pool.chainSub = pool.chain.SubscribeChainEvent(pool.chainCh)
 
 	// Start the event loop and return
 	pool.wg.Add(1)
@@ -311,18 +307,6 @@ func (pool *TxPool) loop() {
 	// Keep waiting for and reacting to the various events
 	for {
 		select {
-		// Handle ChainEvent
-		case ev := <-pool.chainCh:
-			if ev.Block != nil {
-				pool.mu.Lock()
-				if pool.chainconfig.IsHomestead(ev.Block.Number()) {
-					pool.homestead = true
-				}
-				bloom := types.CreateTxsBloom(pool.signer, ev.Block.Transactions())
-				index := ev.Block.Number().Uint64() % pool.config.BloomSize
-				pool.blooms[index] = bloom
-				pool.mu.Unlock()
-			}
 		// Handle ChainHeadEvent
 		case ev := <-pool.chainHeadCh:
 			if ev.Block != nil {
@@ -714,7 +698,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	from, _ := types.Sender(pool.signer, tx) // already validated
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
-		inserted, old := list.Add(tx, pool.config.ParityBump)
+		inserted, old := list.Add(tx, pool.config.PriceBump)
 		if !inserted {
 			pendingDiscardCounter.Inc(1)
 			return false, ErrReplaceUnderpriced
@@ -763,7 +747,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
-	inserted, old := pool.queue[from].Add(tx, pool.config.ParityBump)
+	inserted, old := pool.queue[from].Add(tx, pool.config.PriceBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		queuedDiscardCounter.Inc(1)
@@ -805,7 +789,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	list := pool.pending[addr]
 
-	inserted, old := list.Add(tx, pool.config.ParityBump)
+	inserted, old := list.Add(tx, pool.config.PriceBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		pool.all.Remove(hash)
