@@ -137,11 +137,9 @@ type TxPoolConfig struct {
 	Journal   string           // Journal of local transactions to survive node restarts
 	Rejournal time.Duration    // Time interval to regenerate the local transaction journal
 
-	PriceLimit uint64 // Minimum gas price to enforce for acceptance into the pool
-	PriceBump  uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
-
+	PriceLimit  uint64 // Minimum gas price to enforce for acceptance into the pool
+	PriceBump   uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
 	ParityLimit uint64 // Minimum parity to enforce for acceptance into the pool
-	ParityBump  uint64 // Minimum parity bump percentage to replace an already existing transaction (nonce)
 
 	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
@@ -157,11 +155,9 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	PriceLimit: 1,
-	PriceBump:  10,
-
+	PriceLimit:  1,
+	PriceBump:   10,
 	ParityLimit: 0.0,
-	ParityBump:  5,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -719,7 +715,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	from, _ := types.Sender(pool.signer, tx) // already validated
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
-		inserted, old := list.Add(tx, pool.config.ParityBump)
+		inserted, old := list.Add(tx, pool.config.PriceBump)
 		if !inserted {
 			pendingDiscardCounter.Inc(1)
 			return false, ErrReplaceUnderpriced
@@ -768,7 +764,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
-	inserted, old := pool.queue[from].Add(tx, pool.config.ParityBump)
+	inserted, old := pool.queue[from].Add(tx, pool.config.PriceBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		queuedDiscardCounter.Inc(1)
@@ -810,7 +806,7 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	list := pool.pending[addr]
 
-	inserted, old := list.Add(tx, pool.config.ParityBump)
+	inserted, old := list.Add(tx, pool.config.PriceBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		pool.all.Remove(hash)

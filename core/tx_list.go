@@ -248,15 +248,15 @@ func (l *txList) Overlaps(tx *types.Transaction) bool {
 //
 // If the new transaction is accepted into the list, the lists' cost and gas
 // thresholds are also potentially updated.
-func (l *txList) Add(tx *types.Transaction, parityBump uint64) (bool, *types.Transaction) {
+func (l *txList) Add(tx *types.Transaction, priceBump uint64) (bool, *types.Transaction) {
 	// If there's an older better transaction, abort
 	old := l.txs.Get(tx.Nonce())
 	if old != nil {
-		threshold := new(big.Int).Div(new(big.Int).Mul(old.Parity(), big.NewInt(100+int64(parityBump))), big.NewInt(100))
-		// Have to ensure that the new parity is higher than the old parity
-		// as well as checking the percentage threshold to ensure that
-		// this is accurate for low (Wei-level) parity replacements
-		if old.Parity().Cmp(tx.Parity()) >= 0 || threshold.Cmp(tx.Parity()) > 0 {
+		threshold := new(big.Int).Div(new(big.Int).Mul(old.GasPrice(), big.NewInt(100+int64(priceBump))), big.NewInt(100))
+		// Have to ensure that the new gas price is higher than the old gas
+		// price as well as checking the percentage threshold to ensure that
+		// this is accurate for low (Wei-level) gas price replacements
+		if old.GasPrice().Cmp(tx.GasPrice()) >= 0 || threshold.Cmp(tx.GasPrice()) > 0 {
 			return false, nil
 		}
 	}
