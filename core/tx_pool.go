@@ -137,9 +137,11 @@ type TxPoolConfig struct {
 	Journal   string           // Journal of local transactions to survive node restarts
 	Rejournal time.Duration    // Time interval to regenerate the local transaction journal
 
-	PriceLimit  uint64  // Minimum gas price to enforce for acceptance into the pool
-	PriceBump   uint64  // Minimum price bump percentage to replace an already existing transaction (nonce)
-	ParityLimit float64 // Minimum parity to enforce for acceptance into the pool
+	PriceLimit uint64 // Minimum gas price to enforce for acceptance into the pool
+	PriceBump  uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
+
+	ParityLimit uint64 // Minimum parity to enforce for acceptance into the pool
+	ParityBump  uint64 // Minimum parity bump percentage to replace an already existing transaction (nonce)
 
 	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
@@ -155,9 +157,11 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	Journal:   "transactions.rlp",
 	Rejournal: time.Hour,
 
-	PriceLimit:  1,
-	PriceBump:   10,
+	PriceLimit: 1,
+	PriceBump:  10,
+
 	ParityLimit: 0.0,
+	ParityBump:  5,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -198,7 +202,7 @@ type TxPool struct {
 	chainconfig  *params.ChainConfig
 	chain        blockChain
 	gasPrice     *big.Int
-	parity       float64
+	parityLimit  *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan ChainHeadEvent
@@ -217,7 +221,7 @@ type TxPool struct {
 	queue    map[common.Address]*txList   // Queued but non-processable transactions
 	beats    map[common.Address]time.Time // Last heartbeat from each known account
 	all      *txLookup                    // All transactions to allow lookups
-	parities *txParityList                // All transactions sorted by parity
+	paritied *txParityList                // All transactions sorted by parity
 
 	wg sync.WaitGroup // for shutdown sync
 
@@ -242,14 +246,14 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		all:         newTxLookup(),
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
-		parity:      config.ParityLimit,
+		parityLimit: new(big.Int).SetUint64(config.ParityLimit),
 	}
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
 		log.Info("Setting new local account", "address", addr)
 		pool.locals.add(addr)
 	}
-	pool.parities = newTxParitydList(pool.all)
+	pool.paritied = newTxParitydList(pool.all)
 	pool.reset(nil, chain.CurrentBlock().Header())
 
 	// If local transactions and journaling is enabled, load from disk
@@ -317,7 +321,7 @@ func (pool *TxPool) loop() {
 		case <-report.C:
 			pool.mu.RLock()
 			pending, queued := pool.stats()
-			stales := pool.parities.stales
+			stales := pool.paritied.stales
 			pool.mu.RUnlock()
 
 			if pending != prevPending || queued != prevQueued || stales != prevStales {
@@ -490,25 +494,25 @@ func (pool *TxPool) SetGasPrice(price *big.Int) {
 	log.Info("Transaction pool price threshold updated", "price", price)
 }
 
-// Parity returns the current parity enforced by the transaction pool.
-func (pool *TxPool) Parity() float64 {
+// ParityLimit returns the current parity enforced by the transaction pool.
+func (pool *TxPool) ParityLimit() *big.Int {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
-	return pool.parity
+	return pool.parityLimit
 }
 
 // SetParity updates the minimum parity required by the transaction pool for a
 // new transaction, and drops all transactions below this threshold.
-func (pool *TxPool) SetParity(parity float64) {
+func (pool *TxPool) SetParity(parityLimit *big.Int) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
-	pool.parity = parity
-	for _, tx := range pool.parities.Cap(parity, pool.locals) {
+	pool.parityLimit = parityLimit
+	for _, tx := range pool.paritied.Cap(parityLimit, pool.locals) {
 		pool.removeTx(tx.Hash(), false)
 	}
-	log.Info("Transaction pool parity threshold updated", "parity", parity)
+	log.Info("Transaction pool parity threshold updated", "parityLimit", parityLimit)
 }
 
 // State returns the virtual managed state of the transaction pool.
@@ -623,16 +627,37 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if !local && pool.gasPrice.Cmp(tx.GasPrice()) > 0 {
 		return ErrUnderpriced
 	}
-	if !local && pool.parity > tx.Parity() {
+
+	mruNumber := pool.currentState.GetMRUNumber(from)
+	nonce := pool.currentState.GetNonce(from)
+	balance := pool.currentState.GetBalance(from)
+
+	if nonce > 0 && mruNumber > 0 && balance.Sign() > 0 {
+		curentBlockNumber := pool.chain.CurrentBlock().NumberU64()
+		staleness := 1 + curentBlockNumber - mruNumber
+		const BlockPerYear = 635 * 24 * 60 * 60 / 2 // block time = 2s
+		parity := balance.Mul(balance, new(big.Int).SetUint64(staleness))
+		// annual interest rate = 7 / 100
+		parity.Mul(parity, big.NewInt(7))
+		parity.Div(parity, big.NewInt(100))
+		parity.Div(parity, big.NewInt(BlockPerYear))
+		tx.SetParity(parity)
+	} else {
+		// new account: zero parity
+		//tx.SetParity(new(big.Int))
+	}
+
+	if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
 		return ErrUnderparity
 	}
+
 	// Ensure the transaction adheres to nonce ordering
-	if pool.currentState.GetNonce(from) > tx.Nonce() {
+	if nonce > tx.Nonce() {
 		return ErrNonceTooLow
 	}
 	// Transactor should have enough funds to cover the costs
 	// cost == V + GP * GL
-	if pool.currentState.GetBalance(from).Cmp(tx.Cost()) < 0 {
+	if balance.Cmp(tx.Cost()) < 0 {
 		return ErrInsufficientFunds
 	}
 	intrGas, err := IntrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
@@ -660,8 +685,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 		log.Trace("Discarding already known transaction", "hash", hash)
 		return false, fmt.Errorf("known transaction: %x", hash)
 	}
-	// TODO: Need to calculate parity for the tx
-	tx.SetParity(0.0)
+
 	// If the transaction fails basic validation, discard it
 	if err := pool.validateTx(tx, local); err != nil {
 		log.Trace("Discarding invalid transaction", "hash", hash, "err", err)
@@ -671,13 +695,13 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	// If the transaction pool is full, discard underparity transactions
 	if uint64(pool.all.Count()) >= pool.config.GlobalSlots+pool.config.GlobalQueue {
 		// If the new transaction is underparity, don't accept it
-		if !local && pool.parities.Underparity(tx, pool.locals) {
+		if !local && pool.paritied.Underparity(tx, pool.locals) {
 			log.Trace("Discarding underparity transaction", "hash", hash, "parity", tx.Parity())
 			underparityTxCounter.Inc(1)
 			return false, ErrUnderpriced
 		}
 		// New transaction is better than our worse ones, make room for it
-		drop := pool.parities.Discard(pool.all.Count()-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
+		drop := pool.paritied.Discard(pool.all.Count()-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
 		for _, tx := range drop {
 			log.Trace("Discarding freshly underparity transaction", "hash", tx.Hash(), "parity", tx.Parity())
 			underparityTxCounter.Inc(1)
@@ -688,7 +712,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 	from, _ := types.Sender(pool.signer, tx) // already validated
 	if list := pool.pending[from]; list != nil && list.Overlaps(tx) {
 		// Nonce already pending, check if required price bump is met
-		inserted, old := list.Add(tx, pool.config.PriceBump)
+		inserted, old := list.Add(tx, pool.config.ParityBump)
 		if !inserted {
 			pendingDiscardCounter.Inc(1)
 			return false, ErrReplaceUnderpriced
@@ -696,11 +720,11 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 		// New transaction is better, replace old one
 		if old != nil {
 			pool.all.Remove(old.Hash())
-			pool.parities.Removed()
+			pool.paritied.Removed()
 			pendingReplaceCounter.Inc(1)
 		}
 		pool.all.Add(tx)
-		pool.parities.Put(tx)
+		pool.paritied.Put(tx)
 		pool.journalTx(from, tx)
 
 		log.Trace("Pooled new executable transaction", "hash", hash, "from", from, "to", tx.To())
@@ -737,7 +761,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	if pool.queue[from] == nil {
 		pool.queue[from] = newTxList(false)
 	}
-	inserted, old := pool.queue[from].Add(tx, pool.config.PriceBump)
+	inserted, old := pool.queue[from].Add(tx, pool.config.ParityBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		queuedDiscardCounter.Inc(1)
@@ -746,12 +770,12 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	// Discard any previous transaction and mark this
 	if old != nil {
 		pool.all.Remove(old.Hash())
-		pool.parities.Removed()
+		pool.paritied.Removed()
 		queuedReplaceCounter.Inc(1)
 	}
 	if pool.all.Get(hash) == nil {
 		pool.all.Add(tx)
-		pool.parities.Put(tx)
+		pool.paritied.Put(tx)
 	}
 	return old != nil, nil
 }
@@ -779,11 +803,11 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	}
 	list := pool.pending[addr]
 
-	inserted, old := list.Add(tx, pool.config.PriceBump)
+	inserted, old := list.Add(tx, pool.config.ParityBump)
 	if !inserted {
 		// An older transaction was better, discard this
 		pool.all.Remove(hash)
-		pool.parities.Removed()
+		pool.paritied.Removed()
 
 		pendingDiscardCounter.Inc(1)
 		return false
@@ -791,14 +815,14 @@ func (pool *TxPool) promoteTx(addr common.Address, hash common.Hash, tx *types.T
 	// Otherwise discard any previous transaction and mark this
 	if old != nil {
 		pool.all.Remove(old.Hash())
-		pool.parities.Removed()
+		pool.paritied.Removed()
 
 		pendingReplaceCounter.Inc(1)
 	}
 	// Failsafe to work around direct pending inserts (tests)
 	if pool.all.Get(hash) == nil {
 		pool.all.Add(tx)
-		pool.parities.Put(tx)
+		pool.paritied.Put(tx)
 	}
 	// Set the potentially new pending nonce and notify any subsystems of the new tx
 	pool.beats[addr] = time.Now()
@@ -925,7 +949,7 @@ func (pool *TxPool) removeTx(hash common.Hash, outofbound bool) {
 	// Remove it from the list of known transactions
 	pool.all.Remove(hash)
 	if outofbound {
-		pool.parities.Removed()
+		pool.paritied.Removed()
 	}
 	// Remove the transaction from the pending lists and reset the account nonce
 	if pending := pool.pending[addr]; pending != nil {
@@ -980,7 +1004,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			hash := tx.Hash()
 			log.Trace("Removed old queued transaction", "hash", hash)
 			pool.all.Remove(hash)
-			pool.parities.Removed()
+			pool.paritied.Removed()
 		}
 		// Drop all transactions that are too costly (low balance or out of gas)
 		drops, _ := list.Filter(pool.currentState.GetBalance(addr), pool.currentMaxGas)
@@ -988,7 +1012,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			hash := tx.Hash()
 			log.Trace("Removed unpayable queued transaction", "hash", hash)
 			pool.all.Remove(hash)
-			pool.parities.Removed()
+			pool.paritied.Removed()
 			queuedNofundsCounter.Inc(1)
 		}
 		// Gather all executable transactions and promote them
@@ -1004,7 +1028,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 			for _, tx := range list.Cap(int(pool.config.AccountQueue)) {
 				hash := tx.Hash()
 				pool.all.Remove(hash)
-				pool.parities.Removed()
+				pool.paritied.Removed()
 				queuedRateLimitCounter.Inc(1)
 				log.Trace("Removed cap-exceeding queued transaction", "hash", hash)
 			}
@@ -1053,7 +1077,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 							// Drop the transaction from the global pools too
 							hash := tx.Hash()
 							pool.all.Remove(hash)
-							pool.parities.Removed()
+							pool.paritied.Removed()
 
 							// Update the account nonce to the dropped transaction
 							if nonce := tx.Nonce(); pool.pendingState.GetNonce(offenders[i]) > nonce {
@@ -1075,7 +1099,7 @@ func (pool *TxPool) promoteExecutables(accounts []common.Address) {
 						// Drop the transaction from the global pools too
 						hash := tx.Hash()
 						pool.all.Remove(hash)
-						pool.parities.Removed()
+						pool.paritied.Removed()
 
 						// Update the account nonce to the dropped transaction
 						if nonce := tx.Nonce(); pool.pendingState.GetNonce(addr) > nonce {
@@ -1144,7 +1168,7 @@ func (pool *TxPool) demoteUnexecutables() {
 			hash := tx.Hash()
 			log.Trace("Removed old pending transaction", "hash", hash)
 			pool.all.Remove(hash)
-			pool.parities.Removed()
+			pool.paritied.Removed()
 		}
 		// Drop all transactions that are too costly (low balance or out of gas), and queue any invalids back for later
 		drops, invalids := list.Filter(pool.currentState.GetBalance(addr), pool.currentMaxGas)
@@ -1152,7 +1176,7 @@ func (pool *TxPool) demoteUnexecutables() {
 			hash := tx.Hash()
 			log.Trace("Removed unpayable pending transaction", "hash", hash)
 			pool.all.Remove(hash)
-			pool.parities.Removed()
+			pool.paritied.Removed()
 			pendingNofundsCounter.Inc(1)
 		}
 		for _, tx := range invalids {

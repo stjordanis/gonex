@@ -221,6 +221,15 @@ func (db *StateDB) GetNonce(addr common.Address) uint64 {
 	return 0
 }
 
+func (db *StateDB) GetMRUNumber(addr common.Address) uint64 {
+	stateObject := db.getStateObject(addr)
+	if stateObject != nil {
+		return stateObject.MRUNumber()
+	}
+
+	return 0
+}
+
 func (db *StateDB) GetCode(addr common.Address) []byte {
 	stateObject := db.getStateObject(addr)
 	if stateObject != nil {

@@ -60,7 +60,7 @@ type txdata struct {
 	Hash *common.Hash `json:"hash" rlp:"-"`
 
 	// This is only used as factor for ordering tnx on txpool
-	Parity float64 `json:"-" rlp:"-"`
+	Parity *big.Int `json:"-" rlp:"-"`
 }
 
 type txdataMarshaling struct {
@@ -103,7 +103,6 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 	if gasPrice != nil {
 		d.Price.Set(gasPrice)
 	}
-	d.Parity = 0.0
 
 	return &Transaction{data: d}
 }
@@ -176,14 +175,20 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func (tx *Transaction) Data() []byte             { return common.CopyBytes(tx.data.Payload) }
-func (tx *Transaction) Gas() uint64              { return tx.data.GasLimit }
-func (tx *Transaction) GasPrice() *big.Int       { return new(big.Int).Set(tx.data.Price) }
-func (tx *Transaction) Value() *big.Int          { return new(big.Int).Set(tx.data.Amount) }
-func (tx *Transaction) Nonce() uint64            { return tx.data.AccountNonce }
-func (tx *Transaction) CheckNonce() bool         { return true }
-func (tx *Transaction) Parity() float64          { return tx.data.Parity }
-func (tx *Transaction) SetParity(parity float64) { tx.data.Parity = parity }
+func (tx *Transaction) Data() []byte       { return common.CopyBytes(tx.data.Payload) }
+func (tx *Transaction) Gas() uint64        { return tx.data.GasLimit }
+func (tx *Transaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
+func (tx *Transaction) Value() *big.Int    { return new(big.Int).Set(tx.data.Amount) }
+func (tx *Transaction) Nonce() uint64      { return tx.data.AccountNonce }
+func (tx *Transaction) CheckNonce() bool   { return true }
+func (tx *Transaction) Parity() *big.Int {
+	if tx.data.Parity == nil {
+		tx.data.Parity = new(big.Int)
+	}
+	return tx.data.Parity
+}
+
+func (tx *Transaction) SetParity(parity *big.Int) { tx.data.Parity = parity }
 
 // To returns the recipient address of the transaction.
 // It returns nil if the transaction is a contract creation.

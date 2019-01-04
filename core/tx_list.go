@@ -248,15 +248,15 @@ func (l *txList) Overlaps(tx *types.Transaction) bool {
 //
 // If the new transaction is accepted into the list, the lists' cost and gas
 // thresholds are also potentially updated.
-func (l *txList) Add(tx *types.Transaction, priceBump uint64) (bool, *types.Transaction) {
+func (l *txList) Add(tx *types.Transaction, parityBump uint64) (bool, *types.Transaction) {
 	// If there's an older better transaction, abort
 	old := l.txs.Get(tx.Nonce())
 	if old != nil {
-		threshold := new(big.Int).Div(new(big.Int).Mul(old.GasPrice(), big.NewInt(100+int64(priceBump))), big.NewInt(100))
-		// Have to ensure that the new gas price is higher than the old gas
-		// price as well as checking the percentage threshold to ensure that
-		// this is accurate for low (Wei-level) gas price replacements
-		if old.GasPrice().Cmp(tx.GasPrice()) >= 0 || threshold.Cmp(tx.GasPrice()) > 0 {
+		threshold := new(big.Int).Div(new(big.Int).Mul(old.Parity(), big.NewInt(100+int64(parityBump))), big.NewInt(100))
+		// Have to ensure that the new parity is higher than the old parity
+		// as well as checking the percentage threshold to ensure that
+		// this is accurate for low (Wei-level) parity replacements
+		if old.Parity().Cmp(tx.Parity()) >= 0 || threshold.Cmp(tx.Parity()) > 0 {
 			return false, nil
 		}
 	}
@@ -527,7 +527,7 @@ func (h parityHeap) Len() int      { return len(h) }
 func (h parityHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h parityHeap) Less(i, j int) bool {
-	return h[i].Parity() >= h[j].Parity()
+	return h[i].Parity().Cmp(h[j].Parity()) >= 0
 }
 
 func (h *parityHeap) Push(x interface{}) {
@@ -585,7 +585,7 @@ func (l *txParityList) Removed() {
 
 // Cap finds all the transactions below the given parity threshold, drops them
 // from the priced list and returns them for further removal from the entire pool.
-func (l *txParityList) Cap(threshold float64, local *accountSet) types.Transactions {
+func (l *txParityList) Cap(threshold *big.Int, local *accountSet) types.Transactions {
 	drop := make(types.Transactions, 0, 128) // Remote underparity transactions to drop
 	save := make(types.Transactions, 0, 64)  // Local underparity transactions to keep
 
@@ -597,7 +597,7 @@ func (l *txParityList) Cap(threshold float64, local *accountSet) types.Transacti
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.Parity() >= threshold {
+		if tx.Parity().Cmp(threshold) >= 0 {
 			save = append(save, tx)
 			break
 		}
@@ -637,7 +637,7 @@ func (l *txParityList) Underparity(tx *types.Transaction, local *accountSet) boo
 		return false
 	}
 	lowest := []*types.Transaction(*l.items)[0]
-	return lowest.Parity() >= tx.Parity()
+	return lowest.Parity().Cmp(tx.Parity()) >= 0
 }
 
 // Discard finds a number of most underpriced transactions, removes them from the
