@@ -527,7 +527,15 @@ func (h parityHeap) Len() int      { return len(h) }
 func (h parityHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h parityHeap) Less(i, j int) bool {
-	return h[i].Parity().Cmp(h[j].Parity()) >= 0
+	// Sort primarily by parity, returning the lesser one
+	switch h[i].Parity().Cmp(h[j].Parity()) {
+	case -1:
+		return true
+	case 1:
+		return false
+	}
+	// If the prices match, stabilize via nonces (high nonce is worse)
+	return h[i].Nonce() > h[j].Nonce()
 }
 
 func (h *parityHeap) Push(x interface{}) {
