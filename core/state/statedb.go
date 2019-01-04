@@ -355,6 +355,13 @@ func (db *StateDB) SetNonce(addr common.Address, nonce uint64) {
 	}
 }
 
+func (db *StateDB) SetMRUNumber(addr common.Address, nonce uint64) {
+	stateObject := db.GetOrNewStateObject(addr)
+	if stateObject != nil {
+		stateObject.SetMRUNumber(nonce)
+	}
+}
+
 func (db *StateDB) SetCode(addr common.Address, code []byte) {
 	stateObject := db.GetOrNewStateObject(addr)
 	if stateObject != nil {
