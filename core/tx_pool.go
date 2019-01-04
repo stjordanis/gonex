@@ -168,7 +168,6 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	GlobalSlots:  4096,
 	AccountQueue: 64,
 	GlobalQueue:  1024,
-	BloomSize:    65536,
 
 	Lifetime: 3 * time.Hour,
 }
@@ -209,8 +208,6 @@ type TxPool struct {
 	scope        event.SubscriptionScope
 	chainHeadCh  chan ChainHeadEvent
 	chainHeadSub event.Subscription
-	chainCh      chan ChainEvent
-	chainSub     event.Subscription
 	signer       types.Signer
 	mu           sync.RWMutex
 
@@ -224,7 +221,6 @@ type TxPool struct {
 	pending  map[common.Address]*txList   // All currently processable transactions
 	queue    map[common.Address]*txList   // Queued but non-processable transactions
 	beats    map[common.Address]time.Time // Last heartbeat from each known account
-	blooms   []types.Bloom                // All recent blocks' bloom bits for account/address
 	all      *txLookup                    // All transactions to allow lookups
 	parities *txParityList                // All transactions sorted by parity
 
@@ -248,7 +244,6 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		pending:     make(map[common.Address]*txList),
 		queue:       make(map[common.Address]*txList),
 		beats:       make(map[common.Address]time.Time),
-		blooms:      make([]types.Bloom, config.BloomSize),
 		all:         newTxLookup(),
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
