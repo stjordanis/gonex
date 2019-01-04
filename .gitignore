@@ -50,3 +50,5 @@ profile.cov
 # testnet
 *.log
 passwd
+
+*.exe
