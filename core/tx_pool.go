@@ -157,7 +157,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 
 	PriceLimit:  1,
 	PriceBump:   10,
-	ParityLimit: 0.0,
+	ParityLimit: 0,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
