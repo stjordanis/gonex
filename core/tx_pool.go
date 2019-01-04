@@ -38,9 +38,6 @@ import (
 const (
 	// chainHeadChanSize is the size of channel listening to ChainHeadEvent.
 	chainHeadChanSize = 10
-
-	// chainChanSize is the size of channel listening to ChainEvent.
-	chainChanSize = 20
 )
 
 var (
@@ -148,7 +145,6 @@ type TxPoolConfig struct {
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
 	AccountQueue uint64 // Maximum number of non-executable transaction slots permitted per account
 	GlobalQueue  uint64 // Maximum number of non-executable transaction slots for all accounts
-	BloomSize    uint64 // Maximum number of recent blocks to make the bloom section
 
 	Lifetime time.Duration // Maximum amount of time non-executable transaction are queued
 }
