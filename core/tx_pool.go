@@ -622,16 +622,35 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if err != nil {
 		return ErrInvalidSender
 	}
+	gasPrice := tx.GasPrice()
 	// Drop non-local transactions under our own minimal accepted gas price
 	local = local || pool.locals.contains(from) // account may be local even if the transaction arrived from the network
-	if !local && pool.gasPrice.Cmp(tx.GasPrice()) > 0 {
+	if !local && pool.gasPrice.Cmp(gasPrice) > 0 {
 		return ErrUnderpriced
 	}
 
-	mruNumber := pool.currentState.GetMRUNumber(from)
 	nonce := pool.currentState.GetNonce(from)
-	balance := pool.currentState.GetBalance(from)
+	// Ensure the transaction adheres to nonce ordering
+	if nonce > tx.Nonce() {
+		return ErrNonceTooLow
+	}
 
+	balance := pool.currentState.GetBalance(from)
+	// Transactor should have enough funds to cover the costs
+	// cost == V + GP * GL
+	if balance.Cmp(tx.Cost()) < 0 {
+		return ErrInsufficientFunds
+	}
+
+	intrGas, err := IntrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
+	if err != nil {
+		return err
+	}
+	if tx.Gas() < intrGas {
+		return ErrIntrinsicGas
+	}
+
+	mruNumber := pool.currentState.GetMRUNumber(from)
 	if nonce > 0 && mruNumber > 0 && balance.Sign() > 0 {
 		curentBlockNumber := pool.chain.CurrentBlock().NumberU64()
 		staleness := 1 + curentBlockNumber - mruNumber
@@ -641,32 +660,20 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		parity.Mul(parity, big.NewInt(7))
 		parity.Div(parity, big.NewInt(100))
 		parity.Div(parity, big.NewInt(BlockPerYear))
+
+		parity.Div(parity, new(big.Int).SetUint64(intrGas))
+		parity.Add(parity, gasPrice)
+
 		tx.SetParity(parity)
 	} else {
-		// new account: zero parity
-		//tx.SetParity(new(big.Int))
+		// new account: zero additional parity
+		tx.SetParity(gasPrice)
 	}
 
 	if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
 		return ErrUnderparity
 	}
 
-	// Ensure the transaction adheres to nonce ordering
-	if nonce > tx.Nonce() {
-		return ErrNonceTooLow
-	}
-	// Transactor should have enough funds to cover the costs
-	// cost == V + GP * GL
-	if balance.Cmp(tx.Cost()) < 0 {
-		return ErrInsufficientFunds
-	}
-	intrGas, err := IntrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
-	if err != nil {
-		return err
-	}
-	if tx.Gas() < intrGas {
-		return ErrIntrinsicGas
-	}
 	return nil
 }
 
