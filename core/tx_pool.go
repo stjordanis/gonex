@@ -131,7 +131,6 @@ type blockChain interface {
 	StateAt(root common.Hash) (*state.StateDB, error)
 
 	SubscribeChainHeadEvent(ch chan<- ChainHeadEvent) event.Subscription
-	SubscribeChainEvent(ch chan<- ChainEvent) event.Subscription
 }
 
 // TxPoolConfig are the configuration parameters of the transaction pool.
