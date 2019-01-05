@@ -534,7 +534,7 @@ func (h parityHeap) Less(i, j int) bool {
 	case 1:
 		return false
 	}
-	// If the prices match, stabilize via nonces (high nonce is worse)
+	// If the parity match, stabilize via nonces (high nonce is worse)
 	return h[i].Nonce() > h[j].Nonce()
 }
 
@@ -558,8 +558,8 @@ type txParityList struct {
 	stales int         // Number of stale parity points to (re-heap trigger)
 }
 
-// newTxParitydList creates a new parity-sorted transaction heap.
-func newTxParitydList(all *txLookup) *txParityList {
+// newTxParityList creates a new parity-sorted transaction heap.
+func newTxParityList(all *txLookup) *txParityList {
 	return &txParityList{
 		all:   all,
 		items: new(parityHeap),

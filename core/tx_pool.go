@@ -249,7 +249,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		log.Info("Setting new local account", "address", addr)
 		pool.locals.add(addr)
 	}
-	pool.paritied = newTxParitydList(pool.all)
+	pool.paritied = newTxParityList(pool.all)
 	pool.reset(nil, chain.CurrentBlock().Header())
 
 	// If local transactions and journaling is enabled, load from disk
@@ -701,7 +701,7 @@ func (pool *TxPool) add(tx *types.Transaction, local bool) (bool, error) {
 		if !local && pool.paritied.Underparity(tx, pool.locals) {
 			log.Trace("Discarding underparity transaction", "hash", hash, "parity", tx.Parity())
 			underparityTxCounter.Inc(1)
-			return false, ErrUnderpriced
+			return false, ErrUnderparity
 		}
 		// New transaction is better than our worse ones, make room for it
 		drop := pool.paritied.Discard(pool.all.Count()-int(pool.config.GlobalSlots+pool.config.GlobalQueue-1), pool.locals)
@@ -768,7 +768,7 @@ func (pool *TxPool) enqueueTx(hash common.Hash, tx *types.Transaction) (bool, er
 	if !inserted {
 		// An older transaction was better, discard this
 		queuedDiscardCounter.Inc(1)
-		return false, ErrReplaceUnderparity
+		return false, ErrReplaceUnderpriced
 	}
 	// Discard any previous transaction and mark this
 	if old != nil {
