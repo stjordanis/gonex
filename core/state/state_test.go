@@ -40,10 +40,13 @@ func (s *StateSuite) TestDump(c *checker.C) {
 	// generate a few entries
 	obj1 := s.state.GetOrNewStateObject(toAddr([]byte{0x01}))
 	obj1.AddBalance(big.NewInt(22))
+	obj1.SetMRUNumber(12345)
 	obj2 := s.state.GetOrNewStateObject(toAddr([]byte{0x01, 0x02}))
 	obj2.SetCode(crypto.Keccak256Hash([]byte{3, 3, 3, 3, 3, 3, 3}), []byte{3, 3, 3, 3, 3, 3, 3})
+	obj2.SetMRUNumber(66666)
 	obj3 := s.state.GetOrNewStateObject(toAddr([]byte{0x02}))
 	obj3.SetBalance(big.NewInt(44))
+	obj3.SetMRUNumber(88888)
 
 	// write some of them to the trie
 	s.state.updateStateObject(obj1)
@@ -53,10 +56,11 @@ func (s *StateSuite) TestDump(c *checker.C) {
 	// check that dump contains the state objects that are in trie
 	got := string(s.state.Dump())
 	want := `{
-    "root": "71edff0130dd2385947095001c73d9e28d862fc286fca2b922ca6f6f3cddfdd2",
+    "root": "d1a78cc3424d2062e42a5e6307b73f752a267f643c54cf28508e2b69ea4a4264",
     "accounts": {
         "0000000000000000000000000000000000000001": {
             "balance": "22",
+            "mruNumber": 12345,
             "nonce": 0,
             "root": "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
             "codeHash": "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
@@ -65,6 +69,7 @@ func (s *StateSuite) TestDump(c *checker.C) {
         },
         "0000000000000000000000000000000000000002": {
             "balance": "44",
+            "mruNumber": 88888,
             "nonce": 0,
             "root": "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
             "codeHash": "c5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470",
@@ -73,6 +78,7 @@ func (s *StateSuite) TestDump(c *checker.C) {
         },
         "0000000000000000000000000000000000000102": {
             "balance": "0",
+            "mruNumber": 66666,
             "nonce": 0,
             "root": "56e81f171bcc55a6ff8345e692c0f86e5b48e01b996cadc001622fb5e363b421",
             "codeHash": "87874902497a5bb968da31a2998d8f22e949d1ef6214bcdedd8bae24cca4b9e3",
@@ -157,6 +163,7 @@ func TestSnapshot2(t *testing.T) {
 	so0 := state.getStateObject(stateobjaddr0)
 	so0.SetBalance(big.NewInt(42))
 	so0.SetNonce(43)
+	so0.SetMRUNumber(44)
 	so0.SetCode(crypto.Keccak256Hash([]byte{'c', 'a', 'f', 'e'}), []byte{'c', 'a', 'f', 'e'})
 	so0.suicided = false
 	so0.deleted = false
@@ -169,6 +176,7 @@ func TestSnapshot2(t *testing.T) {
 	so1 := state.getStateObject(stateobjaddr1)
 	so1.SetBalance(big.NewInt(52))
 	so1.SetNonce(53)
+	so1.SetMRUNumber(54)
 	so1.SetCode(crypto.Keccak256Hash([]byte{'c', 'a', 'f', 'e', '2'}), []byte{'c', 'a', 'f', 'e', '2'})
 	so1.suicided = true
 	so1.deleted = true
@@ -205,6 +213,9 @@ func compareStateObjects(so0, so1 *stateObject, t *testing.T) {
 	}
 	if so0.Nonce() != so1.Nonce() {
 		t.Fatalf("Nonce mismatch: have %v, want %v", so0.Nonce(), so1.Nonce())
+	}
+	if so0.MRUNumber() != so1.MRUNumber() {
+		t.Fatalf("MRUNumber mismatch: have %v, want %v", so0.MRUNumber(), so1.MRUNumber())
 	}
 	if so0.data.Root != so1.data.Root {
 		t.Errorf("Root mismatch: have %x, want %x", so0.data.Root[:], so1.data.Root[:])
