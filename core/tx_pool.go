@@ -87,8 +87,9 @@ var (
 )
 
 var (
-	evictionInterval    = time.Minute     // Time interval to check for evictable transactions
-	statsReportInterval = 8 * time.Second // Time interval to report transaction pool stats
+	evictionInterval    = time.Minute          // Time interval to check for evictable transactions
+	statsReportInterval = 8 * time.Second      // Time interval to report transaction pool stats
+	blockPerYear        = big.NewInt(15778476) // Number of blocks per year with blocktime = 2s
 )
 
 var (
@@ -650,12 +651,11 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	if nonce > 0 && mruNumber > 0 && balance.Sign() > 0 {
 		currentBlockNumber := pool.chain.CurrentBlock().NumberU64()
 		staleness := 1 + currentBlockNumber - mruNumber
-		const BlockPerYear = 635 * 24 * 60 * 60 / 2 // block time = 2s
-		parity := balance.Mul(balance, new(big.Int).SetUint64(staleness))
+		parity := new(big.Int).Mul(balance, new(big.Int).SetUint64(staleness))
 		// annual interest rate = 7 / 100
 		parity.Mul(parity, big.NewInt(7))
 		parity.Div(parity, big.NewInt(100))
-		parity.Div(parity, big.NewInt(BlockPerYear))
+		parity.Div(parity, blockPerYear)
 
 		parity.Div(parity, new(big.Int).SetUint64(intrGas))
 		parity.Add(parity, gasPrice)
