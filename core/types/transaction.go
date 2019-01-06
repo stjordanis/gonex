@@ -185,10 +185,12 @@ func (tx *Transaction) Parity() *big.Int {
 	if tx.data.Parity == nil {
 		tx.data.Parity = new(big.Int)
 	}
-	return tx.data.Parity
+	return new(big.Int).Set(tx.data.Parity)
 }
 
-func (tx *Transaction) SetParity(parity *big.Int) { tx.data.Parity = parity }
+func (tx *Transaction) SetParity(parity *big.Int) {
+	tx.data.Parity = new(big.Int).Set(parity)
+}
 
 // To returns the recipient address of the transaction.
 // It returns nil if the transaction is a contract creation.

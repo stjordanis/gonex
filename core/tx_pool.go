@@ -495,7 +495,7 @@ func (pool *TxPool) ParityLimit() *big.Int {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
-	return pool.parityLimit
+	return new(big.Int).Set(pool.parityLimit)
 }
 
 // SetParity updates the minimum parity required by the transaction pool for a
