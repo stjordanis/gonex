@@ -648,8 +648,8 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 
 	mruNumber := pool.currentState.GetMRUNumber(from)
 	if nonce > 0 && mruNumber > 0 && balance.Sign() > 0 {
-		curentBlockNumber := pool.chain.CurrentBlock().NumberU64()
-		staleness := 1 + curentBlockNumber - mruNumber
+		currentBlockNumber := pool.chain.CurrentBlock().NumberU64()
+		staleness := 1 + currentBlockNumber - mruNumber
 		const BlockPerYear = 635 * 24 * 60 * 60 / 2 // block time = 2s
 		parity := balance.Mul(balance, new(big.Int).SetUint64(staleness))
 		// annual interest rate = 7 / 100
