@@ -47,6 +47,7 @@ func TestUpdateLeaks(t *testing.T) {
 		addr := common.BytesToAddress([]byte{i})
 		state.AddBalance(addr, big.NewInt(int64(11*i)))
 		state.SetNonce(addr, uint64(42*i))
+		state.SetMRUNumber(addr, uint64(88*i))
 		if i%2 == 0 {
 			state.SetState(addr, common.BytesToHash([]byte{i, i, i}), common.BytesToHash([]byte{i, i, i, i}))
 		}
@@ -74,6 +75,7 @@ func TestIntermediateLeaks(t *testing.T) {
 	modify := func(state *StateDB, addr common.Address, i, tweak byte) {
 		state.SetBalance(addr, big.NewInt(int64(11*i)+int64(tweak)))
 		state.SetNonce(addr, uint64(42*i+tweak))
+		state.SetMRUNumber(addr, uint64(88*i+tweak))
 		if i%2 == 0 {
 			state.SetState(addr, common.Hash{i, i, i, 0}, common.Hash{})
 			state.SetState(addr, common.Hash{i, i, i, tweak}, common.Hash{i, i, i, i, tweak})
@@ -127,6 +129,7 @@ func TestCopy(t *testing.T) {
 	for i := byte(0); i < 255; i++ {
 		obj := orig.GetOrNewStateObject(common.BytesToAddress([]byte{i}))
 		obj.AddBalance(big.NewInt(int64(i)))
+		obj.SetMRUNumber(uint64(i))
 		orig.updateStateObject(obj)
 	}
 	orig.Finalise(false)
@@ -224,6 +227,13 @@ func newTestAction(addr common.Address, r *rand.Rand) testAction {
 			name: "SetNonce",
 			fn: func(a testAction, s *StateDB) {
 				s.SetNonce(addr, uint64(a.args[0]))
+			},
+			args: make([]int64, 1),
+		},
+		{
+			name: "SetMRUNumber",
+			fn: func(a testAction, s *StateDB) {
+				s.SetMRUNumber(addr, uint64(a.args[0]))
 			},
 			args: make([]int64, 1),
 		},
@@ -376,6 +386,7 @@ func (test *snapshotTest) checkEqual(state, checkstate *StateDB) error {
 		checkeq("HasSuicided", state.HasSuicided(addr), checkstate.HasSuicided(addr))
 		checkeq("GetBalance", state.GetBalance(addr), checkstate.GetBalance(addr))
 		checkeq("GetNonce", state.GetNonce(addr), checkstate.GetNonce(addr))
+		checkeq("GetMRUNumber", state.GetMRUNumber(addr), checkstate.GetMRUNumber(addr))
 		checkeq("GetCode", state.GetCode(addr), checkstate.GetCode(addr))
 		checkeq("GetCodeHash", state.GetCodeHash(addr), checkstate.GetCodeHash(addr))
 		checkeq("GetCodeSize", state.GetCodeSize(addr), checkstate.GetCodeSize(addr))
