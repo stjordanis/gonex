@@ -145,7 +145,7 @@ type TxPoolConfig struct {
 
 	PriceLimit  uint64 // Minimum gas price to enforce for acceptance into the pool
 	PriceBump   uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
-	ParityLimit uint64 // Minimum parity to enforce for acceptance into the pool
+	ParityLimit int64  // Minimum parity to enforce for acceptance into the pool
 
 	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
@@ -163,7 +163,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 
 	PriceLimit:  1,
 	PriceBump:   10,
-	ParityLimit: 0,
+	ParityLimit: math.MinInt64,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -248,7 +248,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		all:         newTxLookup(),
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
-		parityLimit: new(big.Int).SetUint64(config.ParityLimit),
+		parityLimit: big.NewInt(config.ParityLimit),
 	}
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
@@ -653,28 +653,25 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 
 	mruNumber := pool.currentState.GetMRUNumber(from)
-	if nonce > 0 && mruNumber > 0 && balance.Sign() > 0 {
-		extrGas, err := ExtrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
-		if err != nil {
-			return err
-		}
-
-		currentBlockNumber := pool.chain.CurrentBlock().NumberU64()
-		staleness := 1 + currentBlockNumber - mruNumber
-		parity := new(big.Int).SetUint64(staleness)
-		parity.Mul(parity, balance)
-		parity.Mul(parity, annualInterestRateDividend)
-		parity.Div(parity, annualInterestRateDivisor)
-		parity.Div(parity, annualBlockCount)
-
-		parity.Div(parity, new(big.Int).SetUint64(intrGas+extrGas))
-		parity.Add(parity, gasPrice)
-
-		tx.SetParity(parity)
-	} else {
-		// new account: zero additional parity
-		tx.SetParity(gasPrice)
+	currentBlockNumber := pool.chain.CurrentBlock().NumberU64()
+	if nonce == 0 && mruNumber == 0 && balance.Sign() == 0 {
+		// new and empty accounts have the lowest priority
+		mruNumber = currentBlockNumber
 	}
+
+	extrGas, err := ExtrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
+	if err != nil {
+		return err
+	}
+
+	totalGas := new(big.Int).SetUint64(intrGas + extrGas)
+	fee := totalGas.Mul(totalGas, gasPrice)
+	parity := fee.Mul(fee, annualBlockCount)
+	parity.Mul(parity, annualInterestRateDivisor)
+	parity.Div(parity, annualInterestRateDividend)
+	parity.Div(parity, balance)
+	parity.Sub(parity, new(big.Int).SetUint64(mruNumber))
+	tx.SetParity(parity)
 
 	if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
 		return ErrUnderparity

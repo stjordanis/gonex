@@ -183,7 +183,7 @@ func (tx *Transaction) Nonce() uint64      { return tx.data.AccountNonce }
 func (tx *Transaction) CheckNonce() bool   { return true }
 func (tx *Transaction) Parity() *big.Int {
 	if tx.data.Parity == nil {
-		tx.data.Parity = new(big.Int)
+		return nil
 	}
 	return new(big.Int).Set(tx.data.Parity)
 }
