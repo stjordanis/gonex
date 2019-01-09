@@ -654,6 +654,11 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 
 	mruNumber := pool.currentState.GetMRUNumber(from)
 	if nonce > 0 && mruNumber > 0 && balance.Sign() > 0 {
+		extrGas, err := ExtrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
+		if err != nil {
+			return err
+		}
+
 		currentBlockNumber := pool.chain.CurrentBlock().NumberU64()
 		staleness := 1 + currentBlockNumber - mruNumber
 		parity := new(big.Int).SetUint64(staleness)
@@ -662,7 +667,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		parity.Div(parity, annualInterestRateDivisor)
 		parity.Div(parity, annualBlockCount)
 
-		parity.Div(parity, new(big.Int).SetUint64(intrGas))
+		parity.Div(parity, new(big.Int).SetUint64(intrGas+extrGas))
 		parity.Add(parity, gasPrice)
 
 		tx.SetParity(parity)

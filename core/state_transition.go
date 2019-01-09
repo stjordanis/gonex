@@ -108,6 +108,23 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 	return gas, nil
 }
 
+// ExtrinsicGas computes the 'extrinsicGas gas' for a message with the given data.
+// + 3 x TxGasContractCreation
+// + 1 x TxDataNonZeroGas (for all zero and non-zero data)
+func ExtrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error) {
+	// Set the starting gas for the raw transaction
+	var gas uint64
+	if contractCreation && homestead {
+		gas = params.TxGasContractCreation * 3
+	}
+	// Bump the required gas by the amount of transactional data
+	if len(data) > 0 {
+		// Zero and non-zero bytes are priced the same
+		gas += uint64(len(data)) * params.TxDataNonZeroGas
+	}
+	return gas, nil
+}
+
 // NewStateTransition initialises and returns a new state transition object.
 func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition {
 	return &StateTransition{
