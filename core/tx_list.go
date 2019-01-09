@@ -648,7 +648,7 @@ func (l *txParityList) Underparity(tx *types.Transaction, local *accountSet) boo
 	return lowest.Parity().Cmp(tx.Parity()) >= 0
 }
 
-// Discard finds a number of most underpriced transactions, removes them from the
+// Discard finds a number of most underparity transactions, removes them from the
 // parity list and returns them for further removal from the entire pool.
 func (l *txParityList) Discard(count int, local *accountSet) types.Transactions {
 	drop := make(types.Transactions, 0, count) // Remote underparity transactions to drop
