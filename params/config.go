@@ -28,6 +28,7 @@ var (
 	MainnetGenesisHash = common.HexToHash("0x080eeb525df0e852343ba13afedf2b256f0991c1b18797e18863fd7b4ab3574b")
 	TestnetGenesisHash = common.HexToHash("0x004803b4cef4470352041a5da08440b8a280b3b9696be3430c2de831de4233d5")
 	RinkebyGenesisHash = common.HexToHash("0x6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177")
+	BurnAddress        = common.HexToAddress("0x0000000000000000000000000000000000000000")
 )
 
 var (
