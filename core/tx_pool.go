@@ -654,7 +654,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 
 	mruNumber := pool.currentState.GetMRUNumber(from)
 	currentBlockNumber := pool.chain.CurrentBlock().NumberU64()
-	if nonce == 0 && mruNumber == 0 && balance.Sign() == 0 {
+	if nonce == 0 || mruNumber == 0 {
 		// new and empty accounts have the lowest priority
 		mruNumber = currentBlockNumber
 	}
@@ -665,12 +665,10 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 
 	totalGas := new(big.Int).SetUint64(intrGas + extrGas)
-	fee := totalGas.Mul(totalGas, gasPrice)
-	parity := fee.Mul(fee, annualBlockCount)
-	parity.Mul(parity, annualInterestRateDivisor)
-	parity.Div(parity, annualInterestRateDividend)
-	parity.Div(parity, balance)
-	parity.Sub(parity, new(big.Int).SetUint64(mruNumber))
+	gasPrice.Mul(gasPrice, new(big.Int).SetUint64(intrGas))
+	gasPrice.Div(gasPrice, totalGas)
+	parity := gasPrice.Rsh(gasPrice, 54) // 378 NTY ~ 0.01 USD
+	parity.Sub(new(big.Int), new(big.Int).SetUint64(mruNumber))
 	tx.SetParity(parity)
 
 	if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
