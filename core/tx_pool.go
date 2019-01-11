@@ -84,6 +84,9 @@ var (
 	// than some meaningful limit a user might use. This is not a consensus error
 	// making the transaction invalid, rather a DOS protection.
 	ErrOversizedData = errors.New("oversized data")
+
+	// ErrBlockTimePrice ...
+	ErrBlockTimePrice = errors.New("invalid block time price")
 )
 
 var (
@@ -92,9 +95,7 @@ var (
 )
 
 var (
-	annualBlockCount           = big.NewInt(15770000) // Number of blocks per year with blocktime = 2s
-	annualInterestRateDividend = big.NewInt(7)        // Annual interest rate 7%
-	annualInterestRateDivisor  = big.NewInt(100)
+	blockTimePrice *big.Int
 )
 
 var (
@@ -653,22 +654,30 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 
 	mruNumber := pool.currentState.GetMRUNumber(from)
-	currentBlockNumber := pool.chain.CurrentBlock().NumberU64()
 	if nonce == 0 || mruNumber == 0 {
-		// new and empty accounts have the lowest priority
-		mruNumber = currentBlockNumber
+		// new and empty accounts are treated as freshly used
+		mruNumber = pool.chain.CurrentBlock().NumberU64()
+	}
+	parity := new(big.Int).SetUint64(mruNumber)
+	parity.Neg(parity)
+
+	if gasPrice.Sign() > 0 {
+		feeParity := gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
+		if blockTimePrice == nil {
+			blockTimePrice, _ = new(big.Int).SetString("333000000000000000000", 10) // 333 NTY ~ 0.01 USD
+			if blockTimePrice == nil {
+				return ErrBlockTimePrice
+			}
+		}
+		feeParity.Div(feeParity, blockTimePrice)
+		parity.Add(parity, feeParity)
 	}
 
-	extrGas, err := ExtrinsicGas(tx.Data(), tx.To() == nil, pool.homestead)
-	if err != nil {
-		return err
+	extrParity := ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
+	if extrParity > 0 {
+		parity.Sub(parity, new(big.Int).SetUint64(extrParity))
 	}
 
-	totalGas := new(big.Int).SetUint64(intrGas + extrGas)
-	gasPrice.Mul(gasPrice, new(big.Int).SetUint64(intrGas))
-	gasPrice.Div(gasPrice, totalGas)
-	parity := gasPrice.Rsh(gasPrice, 54) // 378 NTY ~ 0.01 USD
-	parity.Sub(new(big.Int), new(big.Int).SetUint64(mruNumber))
 	tx.SetParity(parity)
 
 	if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
