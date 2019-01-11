@@ -653,37 +653,39 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return ErrIntrinsicGas
 	}
 
-	mruNumber := pool.currentState.GetMRUNumber(from)
-	if mruNumber == 0 {
-		if nonce == 0 {
-			// new account is treated as freshly used
-			mruNumber = pool.chain.CurrentBlock().NumberU64()
-		} else {
-			// old account from pre-hardfork
-			mruNumber = 1 // TODO: should be DCCS hardfork block number
-		}
-	}
-	parity := new(big.Int).SetUint64(mruNumber)
-	parity.Neg(parity)
-
-	if gasPrice.Sign() > 0 {
-		feeParity := gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
-		if blockTimePrice == nil {
-			blockTimePrice, _ = new(big.Int).SetString("333000000000000000000", 10) // 333 NTY ~ 0.01 USD
-			if blockTimePrice == nil {
-				return ErrBlockTimePrice
+	if tx.Parity() == nil {
+		mruNumber := pool.currentState.GetMRUNumber(from)
+		if mruNumber == 0 {
+			if nonce == 0 {
+				// new account is treated as freshly used
+				mruNumber = pool.chain.CurrentBlock().NumberU64()
+			} else {
+				// old account from pre-hardfork
+				mruNumber = 1 // TODO: should be DCCS hardfork block number
 			}
 		}
-		feeParity.Div(feeParity, blockTimePrice)
-		parity.Add(parity, feeParity)
-	}
+		parity := new(big.Int).SetUint64(mruNumber)
+		parity.Neg(parity)
 
-	extrParity := ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
-	if extrParity > 0 {
-		parity.Sub(parity, new(big.Int).SetUint64(extrParity))
-	}
+		if gasPrice.Sign() > 0 {
+			feeParity := gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
+			if blockTimePrice == nil {
+				blockTimePrice, _ = new(big.Int).SetString("333000000000000000000", 10) // 333 NTY ~ 0.01 USD
+				if blockTimePrice == nil {
+					return ErrBlockTimePrice
+				}
+			}
+			feeParity.Div(feeParity, blockTimePrice)
+			parity.Add(parity, feeParity)
+		}
 
-	tx.SetParity(parity)
+		extrParity := ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
+		if extrParity > 0 {
+			parity.Sub(parity, new(big.Int).SetUint64(extrParity))
+		}
+
+		tx.SetParity(parity)
+	}
 
 	if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
 		return ErrUnderparity
