@@ -241,7 +241,12 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		// error.
 		vmerr error
 	)
-	st.state.SetMRUNumber(msg.From(), evm.BlockNumber.Uint64())
+
+	// Most frequently used number.
+	// TODO: overflow check
+	mru := (st.state.GetMRUNumber(msg.From()) + evm.BlockNumber.Uint64()) / 2
+	st.state.SetMRUNumber(msg.From(), mru)
+
 	if contractCreation {
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
 	} else {
