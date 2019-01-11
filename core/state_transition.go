@@ -243,9 +243,21 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	)
 
 	// Most frequently used number.
-	// TODO: overflow check
-	mru := (st.state.GetMRUNumber(msg.From()) + evm.BlockNumber.Uint64()) / 2
-	st.state.SetMRUNumber(msg.From(), mru)
+	mruNumber := st.state.GetMRUNumber(msg.From())
+	if mruNumber == 0 && st.state.GetNonce(msg.From()) == 0 {
+		// new account is treated as freshly used
+		st.state.SetMRUNumber(msg.From(), evm.BlockNumber.Uint64())
+	} else {
+		if mruNumber == 0 && st.state.GetNonce(msg.From()) > 0 {
+			// old account from pre-hardfork
+			mruNumber = 1 // TODO: should be DCCS hardfork block number
+		}
+		// halves the duration from the previous value
+		mru := new(big.Int).SetUint64(mruNumber)
+		mru.Add(mru, evm.BlockNumber)
+		mru.Rsh(mru, 1)
+		st.state.SetMRUNumber(msg.From(), mru.Uint64())
+	}
 
 	if contractCreation {
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)

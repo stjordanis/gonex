@@ -655,8 +655,13 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 
 	mruNumber := pool.currentState.GetMRUNumber(from)
 	if mruNumber == 0 {
-		// new account are treated as freshly used
-		mruNumber = pool.chain.CurrentBlock().NumberU64()
+		if nonce == 0 {
+			// new account is treated as freshly used
+			mruNumber = pool.chain.CurrentBlock().NumberU64()
+		} else {
+			// old account from pre-hardfork
+			mruNumber = 1 // TODO: should be DCCS hardfork block number
+		}
 	}
 	parity := new(big.Int).SetUint64(mruNumber)
 	parity.Neg(parity)
