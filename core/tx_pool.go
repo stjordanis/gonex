@@ -654,8 +654,8 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 
 	mruNumber := pool.currentState.GetMRUNumber(from)
-	if nonce == 0 || mruNumber == 0 {
-		// new and empty accounts are treated as freshly used
+	if mruNumber == 0 {
+		// new account are treated as freshly used
 		mruNumber = pool.chain.CurrentBlock().NumberU64()
 	}
 	parity := new(big.Int).SetUint64(mruNumber)
