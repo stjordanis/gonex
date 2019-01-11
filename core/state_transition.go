@@ -252,8 +252,8 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 			// old account from pre-hardfork
 			mruNumber = 1 // TODO: should be DCCS hardfork block number
 		}
-		// halves the duration from the previous value
-		mru := new(big.Int).SetUint64(mruNumber)
+		// halves the duration from the previous value, rounding up
+		mru := new(big.Int).SetUint64(mruNumber + 1)
 		mru.Add(mru, evm.BlockNumber)
 		mru.Rsh(mru, 1)
 		st.state.SetMRUNumber(msg.From(), mru.Uint64())
