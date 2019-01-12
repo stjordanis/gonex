@@ -372,7 +372,7 @@ func (h priceHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h priceHeap) Less(i, j int) bool {
 	// Sort primarily by parity, return the larger one
-	if h[i].Parity() != h[j].Parity() {
+	if h[i].HasParity() && h[j].HasParity() && h[i].Parity() != h[j].Parity() {
 		return h[i].Parity() > h[j].Parity()
 	}
 

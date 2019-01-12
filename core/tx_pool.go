@@ -163,7 +163,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 
 	PriceLimit:  1,
 	PriceBump:   10,
-	ParityLimit: types.MaxParity,
+	ParityLimit: types.ParityMax,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -513,7 +513,7 @@ func (pool *TxPool) SetParityLimit(parityLimit uint64) {
 	defer pool.mu.Unlock()
 
 	pool.parityLimit = parityLimit
-	if parityLimit == types.UndefinedParity ||
+	if parityLimit == types.ParityUndefined ||
 		!pool.chainconfig.IsDccs(pool.chain.CurrentBlock().Number()) {
 		return
 	}
@@ -685,9 +685,9 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 				}
 				priceParity := gasPrice.Div(gasPrice, blockTimePrice).Uint64()
 
-				if parity < priceParity {
-					// 0 is the highest priority
-					parity = 0
+				if parity <= priceParity {
+					// ParityMin (1) has the highest priority
+					parity = types.ParityMin
 				} else {
 					parity -= priceParity
 				}

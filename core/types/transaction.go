@@ -33,8 +33,9 @@ import (
 //go:generate gencodec -type txdata -field-override txdataMarshaling -out gen_tx_json.go
 
 const (
-	UndefinedParity = math.MaxUint64
-	MaxParity       = math.MaxUint64
+	ParityUndefined = 0
+	ParityMin       = 1
+	ParityMax       = math.MaxUint64
 )
 
 var (
@@ -102,7 +103,7 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		V:            new(big.Int),
 		R:            new(big.Int),
 		S:            new(big.Int),
-		Parity:       UndefinedParity,
+		Parity:       ParityUndefined,
 	}
 	if amount != nil {
 		d.Amount.Set(amount)
@@ -188,7 +189,7 @@ func (tx *Transaction) GasPrice() *big.Int      { return new(big.Int).Set(tx.dat
 func (tx *Transaction) Value() *big.Int         { return new(big.Int).Set(tx.data.Amount) }
 func (tx *Transaction) Nonce() uint64           { return tx.data.AccountNonce }
 func (tx *Transaction) CheckNonce() bool        { return true }
-func (tx *Transaction) HasParity() bool         { return tx.data.Parity != UndefinedParity }
+func (tx *Transaction) HasParity() bool         { return tx.data.Parity != ParityUndefined }
 func (tx *Transaction) Parity() uint64          { return tx.data.Parity }
 func (tx *Transaction) SetParity(parity uint64) { tx.data.Parity = parity }
 
@@ -317,11 +318,11 @@ type TxByPrice Transactions
 
 func (s TxByPrice) Len() int { return len(s) }
 func (s TxByPrice) Less(i, j int) bool {
-	if s[i].data.Parity == s[j].data.Parity {
-		// Pre-hardfork or same parity
-		return s[i].data.Price.Cmp(s[j].data.Price) > 0
+	if s[i].HasParity() && s[j].HasParity() && s[i].data.Parity != s[j].data.Parity {
+		return s[i].data.Parity < s[j].data.Parity
 	}
-	return s[i].data.Parity < s[j].data.Parity
+	// Pre-hardfork or same parity
+	return s[i].data.Price.Cmp(s[j].data.Price) > 0
 }
 func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
