@@ -34,7 +34,7 @@ import (
 
 const (
 	UndefinedParity = math.MaxUint64
-	MaxParity       = math.MaxUint64 - 1
+	MaxParity       = math.MaxUint64
 )
 
 var (
