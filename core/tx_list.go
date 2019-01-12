@@ -528,12 +528,26 @@ func (h parityHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h parityHeap) Less(i, j int) bool {
 	// Sort primarily by parity, returning the lesser one
-	switch h[i].Parity().Cmp(h[j].Parity()) {
+	if iParity := h[i].Parity(); iParity != nil {
+		if jParity := h[j].Parity(); jParity != nil {
+			// Only for after DCCS hardfork
+			switch iParity.Cmp(jParity) {
+			case -1:
+				return true
+			case 1:
+				return false
+			}
+		}
+	}
+
+	// Sort secondary by price, returning the lesser one
+	switch h[i].GasPrice().Cmp(h[j].GasPrice()) {
 	case -1:
 		return true
 	case 1:
 		return false
 	}
+
 	// If the parity match, stabilize via nonces (high nonce is worse)
 	return h[i].Nonce() > h[j].Nonce()
 }
@@ -605,9 +619,18 @@ func (l *txParityList) Cap(threshold *big.Int, local *accountSet) types.Transact
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.Parity().Cmp(threshold) >= 0 {
-			save = append(save, tx)
-			break
+		if txParity := tx.Parity(); txParity != nil {
+			// After DCCS hardfork
+			if txParity.Cmp(threshold) >= 0 {
+				save = append(save, tx)
+				break
+			}
+		} else {
+			// Before DCCS hardfork
+			if tx.GasPrice().Cmp(threshold) >= 0 {
+				save = append(save, tx)
+				break
+			}
 		}
 		// Non stale transaction found, discard unless local
 		if local.containsTx(tx) {
@@ -644,8 +667,15 @@ func (l *txParityList) Underparity(tx *types.Transaction, local *accountSet) boo
 		log.Error("Parity query for empty pool") // This cannot happen, print to catch programming errors
 		return false
 	}
+
 	lowest := []*types.Transaction(*l.items)[0]
-	return lowest.Parity().Cmp(tx.Parity()) >= 0
+	if lowestParity := lowest.Parity(); lowestParity != nil {
+		if txParity := tx.Parity(); txParity != nil {
+			// Only for after DCCS hardfork
+			return lowestParity.Cmp(txParity) >= 0
+		}
+	}
+	return lowest.GasPrice().Cmp(tx.GasPrice()) >= 0
 }
 
 // Discard finds a number of most underparity transactions, removes them from the

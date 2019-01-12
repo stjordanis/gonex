@@ -505,9 +505,9 @@ func (pool *TxPool) ParityLimit() *big.Int {
 	return new(big.Int).Set(pool.parityLimit)
 }
 
-// SetParity updates the minimum parity required by the transaction pool for a
+// SetParityLimit updates the minimum parity required by the transaction pool for a
 // new transaction, and drops all transactions below this threshold.
-func (pool *TxPool) SetParity(parityLimit *big.Int) {
+func (pool *TxPool) SetParityLimit(parityLimit *big.Int) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
@@ -653,42 +653,44 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return ErrIntrinsicGas
 	}
 
-	if tx.Parity() == nil {
-		mruNumber := pool.currentState.GetMRUNumber(from)
-		if mruNumber == 0 {
-			if nonce == 0 {
-				// new account is treated as freshly used
-				mruNumber = pool.chain.CurrentBlock().NumberU64()
-			} else {
-				// old account from pre-hardfork
-				mruNumber = pool.chainconfig.DccsBlock.Uint64()
-			}
-		}
-		parity := new(big.Int).SetUint64(mruNumber)
-		parity.Neg(parity)
-
-		if gasPrice.Sign() > 0 {
-			feeParity := gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
-			if blockTimePrice == nil {
-				blockTimePrice, _ = new(big.Int).SetString("333000000000000000000", 10) // 333 NTY ~ 0.01 USD
-				if blockTimePrice == nil {
-					return ErrBlockTimePrice
+	if pool.chainconfig.IsDccs(pool.chain.CurrentBlock().Number()) {
+		if tx.Parity() == nil {
+			mruNumber := pool.currentState.GetMRUNumber(from)
+			if mruNumber == 0 {
+				if nonce == 0 {
+					// new account is treated as freshly used
+					mruNumber = pool.chain.CurrentBlock().NumberU64()
+				} else {
+					// old account from pre-hardfork
+					mruNumber = pool.chainconfig.DccsBlock.Uint64()
 				}
 			}
-			feeParity.Div(feeParity, blockTimePrice)
-			parity.Add(parity, feeParity)
+			parity := new(big.Int).SetUint64(mruNumber)
+			parity.Neg(parity)
+
+			if gasPrice.Sign() > 0 {
+				feeParity := gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
+				if blockTimePrice == nil {
+					blockTimePrice, _ = new(big.Int).SetString("333000000000000000000", 10) // 333 NTY ~ 0.01 USD
+					if blockTimePrice == nil {
+						return ErrBlockTimePrice
+					}
+				}
+				feeParity.Div(feeParity, blockTimePrice)
+				parity.Add(parity, feeParity)
+			}
+
+			extrParity := ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
+			if extrParity > 0 {
+				parity.Sub(parity, new(big.Int).SetUint64(extrParity))
+			}
+
+			tx.SetParity(parity)
 		}
 
-		extrParity := ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
-		if extrParity > 0 {
-			parity.Sub(parity, new(big.Int).SetUint64(extrParity))
+		if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
+			return ErrUnderparity
 		}
-
-		tx.SetParity(parity)
-	}
-
-	if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
-		return ErrUnderparity
 	}
 
 	return nil

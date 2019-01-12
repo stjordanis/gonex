@@ -315,9 +315,19 @@ func (s TxByNonce) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
 // for all at once sorting as well as individually adding and removing elements.
 type TxByPrice Transactions
 
-func (s TxByPrice) Len() int           { return len(s) }
-func (s TxByPrice) Less(i, j int) bool { return s[i].data.Parity.Cmp(s[j].data.Parity) > 0 }
-func (s TxByPrice) Swap(i, j int)      { s[i], s[j] = s[j], s[i] }
+func (s TxByPrice) Len() int { return len(s) }
+func (s TxByPrice) Less(i, j int) bool {
+	if s[i].data.Parity != nil && s[j].data.Parity != nil {
+		// Post DCCS hard-fork
+		parityCmp := s[i].data.Parity.Cmp(s[j].data.Parity)
+		if parityCmp != 0 {
+			return parityCmp > 0
+		}
+	}
+	// Pre-hardfork or same parity
+	return s[i].data.Price.Cmp(s[j].data.Price) > 0
+}
+func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 
 func (s *TxByPrice) Push(x interface{}) {
 	*s = append(*s, x.(*Transaction))
