@@ -250,7 +250,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 	} else {
 		if mruNumber == 0 && st.state.GetNonce(msg.From()) > 0 {
 			// old account from pre-hardfork
-			mruNumber = 1 // TODO: should be DCCS hardfork block number
+			mruNumber = st.evm.ChainConfig().DccsBlock.Uint64()
 		}
 		// halves the duration from the previous value, rounding up
 		mru := new(big.Int).SetUint64(mruNumber + 1)

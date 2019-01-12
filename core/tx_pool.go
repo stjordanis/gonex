@@ -661,7 +661,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 				mruNumber = pool.chain.CurrentBlock().NumberU64()
 			} else {
 				// old account from pre-hardfork
-				mruNumber = 1 // TODO: should be DCCS hardfork block number
+				mruNumber = pool.chainconfig.DccsBlock.Uint64()
 			}
 		}
 		parity := new(big.Int).SetUint64(mruNumber)
