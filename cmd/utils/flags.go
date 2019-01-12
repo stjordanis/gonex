@@ -274,7 +274,7 @@ var (
 		Usage: "Price bump percentage to replace an already existing transaction",
 		Value: eth.DefaultConfig.TxPool.PriceBump,
 	}
-	TxPoolParityLimitFlag = cli.Int64Flag{
+	TxPoolParityLimitFlag = cli.Uint64Flag{
 		Name:  "txpool.paritylimit",
 		Usage: "Minimum parity limit to enforce for acceptance into the pool",
 		Value: eth.DefaultConfig.TxPool.ParityLimit,
@@ -1062,7 +1062,7 @@ func setTxPool(ctx *cli.Context, cfg *core.TxPoolConfig) {
 		cfg.PriceBump = ctx.GlobalUint64(TxPoolPriceBumpFlag.Name)
 	}
 	if ctx.GlobalIsSet(TxPoolParityLimitFlag.Name) {
-		cfg.ParityLimit = ctx.GlobalInt64(TxPoolParityLimitFlag.Name)
+		cfg.ParityLimit = ctx.GlobalUint64(TxPoolParityLimitFlag.Name)
 	}
 	if ctx.GlobalIsSet(TxPoolAccountSlotsFlag.Name) {
 		cfg.AccountSlots = ctx.GlobalUint64(TxPoolAccountSlotsFlag.Name)

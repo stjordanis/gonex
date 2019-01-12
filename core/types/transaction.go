@@ -20,6 +20,7 @@ import (
 	"container/heap"
 	"errors"
 	"io"
+	"math"
 	"math/big"
 	"sync/atomic"
 
@@ -30,6 +31,11 @@ import (
 )
 
 //go:generate gencodec -type txdata -field-override txdataMarshaling -out gen_tx_json.go
+
+const (
+	UndefinedParity = math.MaxUint64
+	MaxParity       = math.MaxUint64 - 1
+)
 
 var (
 	ErrInvalidSig = errors.New("invalid transaction v, r, s values")
@@ -59,8 +65,8 @@ type txdata struct {
 	// This is only used when marshaling to JSON.
 	Hash *common.Hash `json:"hash" rlp:"-"`
 
-	// This is only used as factor for ordering tnx on txpool
-	Parity *big.Int `json:"-" rlp:"-"`
+	// Smaller value has higher priority in pool.
+	Parity uint64 `json:"-" rlp:"-"`
 }
 
 type txdataMarshaling struct {
@@ -96,6 +102,7 @@ func newTransaction(nonce uint64, to *common.Address, amount *big.Int, gasLimit 
 		V:            new(big.Int),
 		R:            new(big.Int),
 		S:            new(big.Int),
+		Parity:       UndefinedParity,
 	}
 	if amount != nil {
 		d.Amount.Set(amount)
@@ -175,22 +182,15 @@ func (tx *Transaction) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-func (tx *Transaction) Data() []byte       { return common.CopyBytes(tx.data.Payload) }
-func (tx *Transaction) Gas() uint64        { return tx.data.GasLimit }
-func (tx *Transaction) GasPrice() *big.Int { return new(big.Int).Set(tx.data.Price) }
-func (tx *Transaction) Value() *big.Int    { return new(big.Int).Set(tx.data.Amount) }
-func (tx *Transaction) Nonce() uint64      { return tx.data.AccountNonce }
-func (tx *Transaction) CheckNonce() bool   { return true }
-func (tx *Transaction) Parity() *big.Int {
-	if tx.data.Parity == nil {
-		return nil
-	}
-	return new(big.Int).Set(tx.data.Parity)
-}
-
-func (tx *Transaction) SetParity(parity *big.Int) {
-	tx.data.Parity = new(big.Int).Set(parity)
-}
+func (tx *Transaction) Data() []byte            { return common.CopyBytes(tx.data.Payload) }
+func (tx *Transaction) Gas() uint64             { return tx.data.GasLimit }
+func (tx *Transaction) GasPrice() *big.Int      { return new(big.Int).Set(tx.data.Price) }
+func (tx *Transaction) Value() *big.Int         { return new(big.Int).Set(tx.data.Amount) }
+func (tx *Transaction) Nonce() uint64           { return tx.data.AccountNonce }
+func (tx *Transaction) CheckNonce() bool        { return true }
+func (tx *Transaction) HasParity() bool         { return tx.data.Parity != UndefinedParity }
+func (tx *Transaction) Parity() uint64          { return tx.data.Parity }
+func (tx *Transaction) SetParity(parity uint64) { tx.data.Parity = parity }
 
 // To returns the recipient address of the transaction.
 // It returns nil if the transaction is a contract creation.
@@ -317,15 +317,11 @@ type TxByPrice Transactions
 
 func (s TxByPrice) Len() int { return len(s) }
 func (s TxByPrice) Less(i, j int) bool {
-	if s[i].data.Parity != nil && s[j].data.Parity != nil {
-		// Post DCCS hard-fork
-		parityCmp := s[i].data.Parity.Cmp(s[j].data.Parity)
-		if parityCmp != 0 {
-			return parityCmp > 0
-		}
+	if s[i].data.Parity == s[j].data.Parity {
+		// Pre-hardfork or same parity
+		return s[i].data.Price.Cmp(s[j].data.Price) > 0
 	}
-	// Pre-hardfork or same parity
-	return s[i].data.Price.Cmp(s[j].data.Price) > 0
+	return s[i].data.Parity < s[j].data.Parity
 }
 func (s TxByPrice) Swap(i, j int) { s[i], s[j] = s[j], s[i] }
 

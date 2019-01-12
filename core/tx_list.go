@@ -527,17 +527,9 @@ func (h parityHeap) Len() int      { return len(h) }
 func (h parityHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h parityHeap) Less(i, j int) bool {
-	// Sort primarily by parity, returning the lesser one
-	if iParity := h[i].Parity(); iParity != nil {
-		if jParity := h[j].Parity(); jParity != nil {
-			// Only for after DCCS hardfork
-			switch iParity.Cmp(jParity) {
-			case -1:
-				return true
-			case 1:
-				return false
-			}
-		}
+	// Sort primarily by parity, return the larger one
+	if h[i].Parity() != h[j].Parity() {
+		return h[i].Parity() > h[j].Parity()
 	}
 
 	// Sort secondary by price, returning the lesser one
@@ -548,7 +540,7 @@ func (h parityHeap) Less(i, j int) bool {
 		return false
 	}
 
-	// If the parity match, stabilize via nonces (high nonce is worse)
+	// If the parity and price match, stabilize via nonces (high nonce is worse)
 	return h[i].Nonce() > h[j].Nonce()
 }
 
@@ -607,7 +599,7 @@ func (l *txParityList) Removed() {
 
 // Cap finds all the transactions below the given parity threshold, drops them
 // from the priced list and returns them for further removal from the entire pool.
-func (l *txParityList) Cap(threshold *big.Int, local *accountSet) types.Transactions {
+func (l *txParityList) Cap(threshold uint64, local *accountSet) types.Transactions {
 	drop := make(types.Transactions, 0, 128) // Remote underparity transactions to drop
 	save := make(types.Transactions, 0, 64)  // Local underparity transactions to keep
 
@@ -619,18 +611,9 @@ func (l *txParityList) Cap(threshold *big.Int, local *accountSet) types.Transact
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if txParity := tx.Parity(); txParity != nil {
-			// After DCCS hardfork
-			if txParity.Cmp(threshold) >= 0 {
-				save = append(save, tx)
-				break
-			}
-		} else {
-			// Before DCCS hardfork
-			if tx.GasPrice().Cmp(threshold) >= 0 {
-				save = append(save, tx)
-				break
-			}
+		if tx.Parity() <= threshold {
+			save = append(save, tx)
+			break
 		}
 		// Non stale transaction found, discard unless local
 		if local.containsTx(tx) {
@@ -669,11 +652,9 @@ func (l *txParityList) Underparity(tx *types.Transaction, local *accountSet) boo
 	}
 
 	lowest := []*types.Transaction(*l.items)[0]
-	if lowestParity := lowest.Parity(); lowestParity != nil {
-		if txParity := tx.Parity(); txParity != nil {
-			// Only for after DCCS hardfork
-			return lowestParity.Cmp(txParity) >= 0
-		}
+	if lowest.HasParity() && tx.HasParity() {
+		// Only for after DCCS hardfork
+		return lowest.Parity() <= tx.Parity()
 	}
 	return lowest.GasPrice().Cmp(tx.GasPrice()) >= 0
 }

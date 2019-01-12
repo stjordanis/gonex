@@ -146,7 +146,7 @@ type TxPoolConfig struct {
 
 	PriceLimit  uint64 // Minimum gas price to enforce for acceptance into the pool
 	PriceBump   uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
-	ParityLimit int64  // Minimum parity to enforce for acceptance into the pool
+	ParityLimit uint64 // Minimum parity to enforce for acceptance into the pool
 
 	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
@@ -164,7 +164,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 
 	PriceLimit:  1,
 	PriceBump:   10,
-	ParityLimit: math.MinInt64,
+	ParityLimit: types.MaxParity,
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -205,7 +205,7 @@ type TxPool struct {
 	chainconfig  *params.ChainConfig
 	chain        blockChain
 	gasPrice     *big.Int
-	parityLimit  *big.Int
+	parityLimit  uint64
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan ChainHeadEvent
@@ -249,7 +249,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		all:         newTxLookup(),
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
-		parityLimit: big.NewInt(config.ParityLimit),
+		parityLimit: config.ParityLimit,
 	}
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
@@ -498,16 +498,16 @@ func (pool *TxPool) SetGasPrice(price *big.Int) {
 }
 
 // ParityLimit returns the current parity enforced by the transaction pool.
-func (pool *TxPool) ParityLimit() *big.Int {
+func (pool *TxPool) ParityLimit() uint64 {
 	pool.mu.RLock()
 	defer pool.mu.RUnlock()
 
-	return new(big.Int).Set(pool.parityLimit)
+	return pool.parityLimit
 }
 
 // SetParityLimit updates the minimum parity required by the transaction pool for a
 // new transaction, and drops all transactions below this threshold.
-func (pool *TxPool) SetParityLimit(parityLimit *big.Int) {
+func (pool *TxPool) SetParityLimit(parityLimit uint64) {
 	pool.mu.Lock()
 	defer pool.mu.Unlock()
 
@@ -654,7 +654,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 	}
 
 	if pool.chainconfig.IsDccs(pool.chain.CurrentBlock().Number()) {
-		if tx.Parity() == nil {
+		if !tx.HasParity() {
 			mruNumber := pool.currentState.GetMRUNumber(from)
 			if mruNumber == 0 {
 				if nonce == 0 {
@@ -665,8 +665,10 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 					mruNumber = pool.chainconfig.DccsBlock.Uint64()
 				}
 			}
-			parity := new(big.Int).SetUint64(mruNumber)
-			parity.Neg(parity)
+
+			parity := mruNumber
+
+			parity += ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
 
 			if gasPrice.Sign() > 0 {
 				feeParity := gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
@@ -677,18 +679,19 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 					}
 				}
 				feeParity.Div(feeParity, blockTimePrice)
-				parity.Add(parity, feeParity)
-			}
+				feeParityUI64 := feeParity.Uint64()
 
-			extrParity := ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
-			if extrParity > 0 {
-				parity.Sub(parity, new(big.Int).SetUint64(extrParity))
+				if parity < feeParityUI64 {
+					parity = 0
+				} else {
+					parity -= feeParityUI64
+				}
 			}
 
 			tx.SetParity(parity)
 		}
 
-		if !local && pool.parityLimit.Cmp(tx.Parity()) > 0 {
+		if !local && pool.parityLimit < tx.Parity() {
 			return ErrUnderparity
 		}
 	}
