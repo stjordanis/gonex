@@ -673,25 +673,23 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 				}
 			}
 
-			parity := mruNumber
-
-			parity += ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
+			parity := mruNumber + ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
 
 			if gasPrice.Sign() > 0 {
-				feeParity := gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
+				gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
 				if blockTimePrice == nil {
 					blockTimePrice, _ = new(big.Int).SetString("333000000000000000000", 10) // 333 NTY ~ 0.01 USD
 					if blockTimePrice == nil {
 						return ErrBlockTimePrice
 					}
 				}
-				feeParity.Div(feeParity, blockTimePrice)
-				feeParityUI64 := feeParity.Uint64()
+				priceParity := gasPrice.Div(gasPrice, blockTimePrice).Uint64()
 
-				if parity < feeParityUI64 {
+				if parity < priceParity {
+					// 0 is the highest priority
 					parity = 0
 				} else {
-					parity -= feeParityUI64
+					parity -= priceParity
 				}
 			}
 
