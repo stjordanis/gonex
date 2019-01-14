@@ -175,7 +175,7 @@ func (c *Account) DecodeRLP(s *rlp.Stream) (err error) {
 // Define this instead of (*Account) EncodeRLP(io.Writer) to prevent
 // recusive Encode call, or creating additional rplAccount type.
 func (s *stateObject) EncodeRLP(w io.Writer) error {
-	if c.data.MRUNumber == 0 {
+	if s.data.MRUNumber == 0 {
 		// encode in old db format
 		return rlp.Encode(w, &AccountV1{
 			Nonce:    s.data.Nonce,
