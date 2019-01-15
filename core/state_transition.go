@@ -108,42 +108,6 @@ func IntrinsicGas(data []byte, contractCreation, homestead bool) (uint64, error)
 	return gas, nil
 }
 
-// ExtrinsicGas computes the 'extrinsic gas' for a message with the given data.
-// + 3 x TxGasContractCreation
-// + 1 x TxDataNonZeroGas (for all zero and non-zero data)
-func ExtrinsicGas(data []byte, contractCreation, homestead bool) uint64 {
-	// Set the starting gas for the raw transaction
-	var gas uint64
-	if contractCreation && homestead {
-		gas = params.TxGasContractCreation * 3
-	}
-	// Bump the required gas by the amount of transactional data
-	if len(data) > 0 {
-		// Zero and non-zero bytes are priced the same
-		gas += uint64(len(data)) * params.TxDataNonZeroGas
-	}
-	return gas
-}
-
-// ExtrinsicParity computes the 'extrinsic parity' for a message with the given data.
-// ContractCreation = 1 hour
-// 320kB Data = 15 minutes
-func ExtrinsicParity(data []byte, contractCreation, homestead bool) uint64 {
-	// Set the starting parity for the raw transaction
-	var parity uint64
-	if contractCreation && homestead {
-		// contract deployment takes 1 hour
-		parity += 60 * 60 / 2
-	}
-	// Bump parity by the amount of transactional data
-	// 320kB data takes 15 mins
-	if len(data) > 0 {
-		// Zero and non-zero bytes are priced the same
-		parity += uint64(len(data)) * 15 * 60 / 2 / 320 / 1024
-	}
-	return parity
-}
-
 // NewStateTransition initialises and returns a new state transition object.
 func NewStateTransition(evm *vm.EVM, msg Message, gp *GasPool) *StateTransition {
 	return &StateTransition{

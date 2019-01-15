@@ -611,6 +611,17 @@ func (pool *TxPool) local() map[common.Address]types.Transactions {
 	return txs
 }
 
+// extrinsicParity computes the 'extrinsic parity' for a tx.
+// (intrinsicGas - TxGas) / TxGas (rounding up)
+func extrinsicParity(tx *types.Transaction) uint64 {
+	// The first TxGas (21000) has no extrinsic parity
+	if tx.Gas() <= params.TxGas {
+		return 0
+	}
+
+	return (tx.Gas() - params.TxGas/2) / params.TxGas
+}
+
 // validateTx checks whether a transaction is valid according to the consensus
 // rules and adheres to some heuristic limits of the local node (price and size).
 func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
@@ -673,7 +684,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 				}
 			}
 
-			parity := mruNumber + ExtrinsicParity(tx.Data(), tx.To() == nil, pool.homestead)
+			parity := mruNumber + extrinsicParity(tx)
 
 			if gasPrice.Sign() > 0 {
 				gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
