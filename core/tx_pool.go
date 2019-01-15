@@ -146,6 +146,7 @@ type TxPoolConfig struct {
 	PriceLimit  uint64 // Minimum gas price to enforce for acceptance into the pool
 	PriceBump   uint64 // Minimum price bump percentage to replace an already existing transaction (nonce)
 	ParityLimit uint64 // Minimum parity to enforce for acceptance into the pool
+	ParityPrice uint64 // Price (in wei) for 1 parity unit
 
 	AccountSlots uint64 // Number of executable transaction slots guaranteed per account
 	GlobalSlots  uint64 // Maximum number of executable transaction slots for all accounts
@@ -164,6 +165,7 @@ var DefaultTxPoolConfig = TxPoolConfig{
 	PriceLimit:  1,
 	PriceBump:   10,
 	ParityLimit: types.ParityMax,
+	ParityPrice: 13e15, // ~ 273 NTY ~ 0.01 USD for 21000 Tx Gas
 
 	AccountSlots: 16,
 	GlobalSlots:  4096,
@@ -189,6 +191,10 @@ func (config *TxPoolConfig) sanitize() TxPoolConfig {
 		log.Warn("Sanitizing invalid txpool price bump", "provided", conf.PriceBump, "updated", DefaultTxPoolConfig.PriceBump)
 		conf.PriceBump = DefaultTxPoolConfig.PriceBump
 	}
+	if conf.ParityPrice < 0 {
+		log.Warn("Sanitizing invalid txpool pairty price", "provided", conf.PriceBump, "updated", DefaultTxPoolConfig.ParityPrice)
+		conf.PriceBump = DefaultTxPoolConfig.ParityPrice
+	}
 	return conf
 }
 
@@ -205,6 +211,7 @@ type TxPool struct {
 	chain        blockChain
 	gasPrice     *big.Int
 	parityLimit  uint64
+	parityPrice  *big.Int
 	txFeed       event.Feed
 	scope        event.SubscriptionScope
 	chainHeadCh  chan ChainHeadEvent
@@ -249,6 +256,7 @@ func NewTxPool(config TxPoolConfig, chainconfig *params.ChainConfig, chain block
 		chainHeadCh: make(chan ChainHeadEvent, chainHeadChanSize),
 		gasPrice:    new(big.Int).SetUint64(config.PriceLimit),
 		parityLimit: config.ParityLimit,
+		parityPrice: new(big.Int).SetUint64(config.ParityPrice),
 	}
 	pool.locals = newAccountSet(pool.signer)
 	for _, addr := range config.Locals {
@@ -687,14 +695,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 			parity := mruNumber + extrinsicParity(tx)
 
 			if gasPrice.Sign() > 0 {
-				gasPrice.Mul(gasPrice, big.NewInt(21000)) // 21k TxGas
-				if blockTimePrice == nil {
-					blockTimePrice, _ = new(big.Int).SetString("333000000000000000000", 10) // 333 NTY ~ 0.01 USD
-					if blockTimePrice == nil {
-						return ErrBlockTimePrice
-					}
-				}
-				priceParity := gasPrice.Div(gasPrice, blockTimePrice).Uint64()
+				priceParity := gasPrice.Div(gasPrice, pool.parityPrice).Uint64()
 
 				if parity <= priceParity {
 					// ParityMin (1) has the highest priority

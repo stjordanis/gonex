@@ -279,6 +279,11 @@ var (
 		Usage: "Minimum parity limit to enforce for acceptance into the pool",
 		Value: eth.DefaultConfig.TxPool.ParityLimit,
 	}
+	TxPoolParityPriceFlag = cli.Uint64Flag{
+		Name:  "txpool.parityprice",
+		Usage: "Price for a parity unit",
+		Value: eth.DefaultConfig.TxPool.ParityPrice,
+	}
 	TxPoolAccountSlotsFlag = cli.Uint64Flag{
 		Name:  "txpool.accountslots",
 		Usage: "Minimum number of executable transaction slots guaranteed per account",
