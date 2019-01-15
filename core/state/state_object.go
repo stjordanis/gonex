@@ -98,9 +98,9 @@ func (s *stateObject) empty() bool {
 type Account struct {
 	Nonce     uint64
 	Balance   *big.Int
-	MRUNumber uint64      // most recently used block number
 	Root      common.Hash // merkle root of the storage trie
 	CodeHash  []byte
+	MRUNumber uint64 // most recently used block number
 }
 
 // newObject creates a state object.
@@ -144,23 +144,20 @@ func (c *Account) DecodeRLP(s *rlp.Stream) (err error) {
 		return err
 	}
 
-	var size uint64
-	if _, size, err = s.Kind(); err != nil {
-		return err
-	}
-
-	if size <= 8 {
-		if c.MRUNumber, err = s.Uint(); err != nil {
-			return err
-		}
-	}
-
 	if err = s.Decode(&c.Root); err != nil {
 		return err
 	}
 
 	if c.CodeHash, err = s.Bytes(); err != nil {
 		return err
+	}
+
+	if c.MRUNumber, err = s.Uint(); err != nil {
+		if err != rlp.EOL {
+			return err
+		}
+		// old pre-fork state data, reset the value
+		c.MRUNumber = 0
 	}
 
 	if err = s.ListEnd(); err != nil {
