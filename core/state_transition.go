@@ -29,6 +29,9 @@ import (
 
 var (
 	errInsufficientBalanceForGas = errors.New("insufficient balance to pay for gas")
+
+	// big.Int cache for the param
+	mruGasThreshold = new(big.Int).SetUint64(params.MRUGasThreshold)
 )
 
 /*
@@ -206,25 +209,6 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		vmerr error
 	)
 
-	if st.evm.ChainConfig().IsDccs(st.evm.BlockNumber) {
-		// Most frequently used number.
-		mruNumber := st.state.GetMRUNumber(msg.From())
-		if mruNumber == 0 && st.state.GetNonce(msg.From()) == 0 {
-			// new account is treated as freshly used
-			st.state.SetMRUNumber(msg.From(), evm.BlockNumber.Uint64())
-		} else {
-			if mruNumber == 0 && st.state.GetNonce(msg.From()) > 0 {
-				// old account from pre-hardfork
-				mruNumber = st.evm.ChainConfig().DccsBlock.Uint64()
-			}
-			// halves the duration from the previous value, rounding up
-			mru := new(big.Int).SetUint64(mruNumber + 1)
-			mru.Add(mru, evm.BlockNumber)
-			mru.Rsh(mru, 1)
-			st.state.SetMRUNumber(msg.From(), mru.Uint64())
-		}
-	}
-
 	if contractCreation {
 		ret, _, st.gas, vmerr = evm.Create(sender, st.data, st.gas, st.value)
 	} else {
@@ -248,7 +232,59 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
 	}
 
+	st.updateMRU()
+
 	return ret, st.gasUsed(), vmerr != nil, err
+}
+
+// updateMRU updates the accumulating Most Frequently Used number,
+// after the state transistion applied
+func (st *StateTransition) updateMRU() bool {
+	blockNumber := st.evm.BlockNumber
+	if !st.evm.ChainConfig().IsDccs(blockNumber) {
+		return false
+	}
+
+	from := st.msg.From()
+
+	// Most frequently used number.
+	mruNumber := st.state.GetMRUNumber(from)
+	if mruNumber == 0 && st.state.GetNonce(from) == 0 {
+		// new account is treated as freshly used
+		st.state.SetMRUNumber(from, blockNumber.Uint64())
+		return true
+	}
+
+	gasUsed := st.gasUsed()
+	if gasUsed >= params.MRUGasThreshold {
+		// excess gas threshold, completely exhaust the MRU value
+		st.state.SetMRUNumber(from, blockNumber.Uint64())
+		return true
+	}
+
+	if mruNumber == 0 && st.state.GetNonce(from) > 0 {
+		// old account from pre-hardfork
+		mruNumber = st.evm.ChainConfig().DccsBlock.Uint64()
+	}
+
+	if blockNumber.Uint64() <= mruNumber+1 {
+		// short-circuit frequently used account
+		st.state.SetMRUNumber(from, blockNumber.Uint64())
+		return true
+	}
+
+	mru := new(big.Int).SetUint64(mruNumber)
+	distant := new(big.Int).Sub(blockNumber, mru)
+	distant.Mul(distant, new(big.Int).SetUint64(gasUsed))
+	distant.Div(distant, mruGasThreshold)
+	if distant.Sign() > 0 {
+		// mru += (number - mru) * gasUsed / gasMRUThreshold
+		st.state.SetMRUNumber(from, mru.Add(mru, distant).Uint64())
+	} else {
+		// mru has to be increased atleast 1 block
+		st.state.SetMRUNumber(from, mruNumber+1)
+	}
+	return true
 }
 
 func (st *StateTransition) refundGas() {
