@@ -352,9 +352,9 @@ func (s *Snapshot) inturn2(number uint64, signer common.Address) bool {
 	return (number % uint64(len(signers))) == uint64(offset)
 }
 
-func signerOffset(signer common.Address, addrs []common.Address) (int, bool) {
-	for i, addr := range addrs {
-		if addr == signer {
+func signerOffset(signer common.Address, signers []Signer) (int, bool) {
+	for i, sig := range signers {
+		if sig.Address == signer {
 			return i, true
 		}
 	}
@@ -364,7 +364,7 @@ func signerOffset(signer common.Address, addrs []common.Address) (int, bool) {
 // difficulty returns the block weight at a given block height for a signer.
 // Turn-ness is in range of [1,n]. Valid difficulty is in range of [1,n].
 func (s *Snapshot) difficulty(number uint64, signer common.Address) *big.Int {
-	signers := s.signers()
+	signers := s.signers2()
 	offset, ok := signerOffset(signer, signers)
 	if !ok {
 		return common.Big0
