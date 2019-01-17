@@ -44,11 +44,11 @@ var (
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
 		ConstantinopleBlock: nil,
-		DccsBlock:           big.NewInt(9000),
-		NtfContractAddress:  common.HexToAddress("0xd8b7f9ba2efa22c2111d4c0476a65faabfeef271"),
+		DccsBlock:           nil,
+		NtfContractAddress:  common.HexToAddress("0x0"),
 		Dccs: &DccsConfig{
 			Period: 2,
-			Epoch:  300,
+			Epoch:  30000,
 		},
 	}
 
