@@ -145,6 +145,18 @@ func (b *SimulatedBackend) NonceAt(ctx context.Context, contract common.Address,
 	return statedb.GetNonce(contract), nil
 }
 
+// MRUNumberAt returns the nonce of a certain account in the blockchain.
+func (b *SimulatedBackend) MRUNumberAt(ctx context.Context, contract common.Address, blockNumber *big.Int) (uint64, error) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	if blockNumber != nil && blockNumber.Cmp(b.blockchain.CurrentBlock().Number()) != 0 {
+		return 0, errBlockNumberUnsupported
+	}
+	statedb, _ := b.blockchain.State()
+	return statedb.GetMRUNumber(contract), nil
+}
+
 // ForEachStorageAt returns func to read all keys, values in the storage
 func (b *SimulatedBackend) ForEachStorageAt(ctx context.Context, contract common.Address, blockNumber *big.Int, f func(key, val common.Hash) bool) error {
 	b.mu.Lock()

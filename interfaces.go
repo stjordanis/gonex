@@ -93,6 +93,7 @@ type ChainStateReader interface {
 	StorageAt(ctx context.Context, account common.Address, key common.Hash, blockNumber *big.Int) ([]byte, error)
 	CodeAt(ctx context.Context, account common.Address, blockNumber *big.Int) ([]byte, error)
 	NonceAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
+	MRUNumberAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error)
 }
 
 // SyncProgress gives progress indications when the node is synchronising with

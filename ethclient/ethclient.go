@@ -360,6 +360,14 @@ func (ec *Client) NonceAt(ctx context.Context, account common.Address, blockNumb
 	return uint64(result), err
 }
 
+// MRUNumberAt returns the last recent used block number of the given account.
+// The block number can be nil, in which case the nonce is taken from the latest known block.
+func (ec *Client) MRUNumberAt(ctx context.Context, account common.Address, blockNumber *big.Int) (uint64, error) {
+	var result hexutil.Uint64
+	err := ec.c.CallContext(ctx, &result, "eth_getMRUNumber", account, toBlockNumArg(blockNumber))
+	return uint64(result), err
+}
+
 // Filters
 
 // FilterLogs executes a filter query.
@@ -431,6 +439,14 @@ func (ec *Client) PendingCodeAt(ctx context.Context, account common.Address) ([]
 func (ec *Client) PendingNonceAt(ctx context.Context, account common.Address) (uint64, error) {
 	var result hexutil.Uint64
 	err := ec.c.CallContext(ctx, &result, "eth_getTransactionCount", account, "pending")
+	return uint64(result), err
+}
+
+// PendingMRUNumberAt returns the last recent used block number of the given account in the pending state.
+// This is the nonce that should be used for the next transaction.
+func (ec *Client) PendingMRUNumberAt(ctx context.Context, account common.Address) (uint64, error) {
+	var result hexutil.Uint64
+	err := ec.c.CallContext(ctx, &result, "eth_getMRUNumber", account, "pending")
 	return uint64(result), err
 }
 

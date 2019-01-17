@@ -26,12 +26,13 @@ import (
 )
 
 type DumpAccount struct {
-	Balance  string            `json:"balance"`
-	Nonce    uint64            `json:"nonce"`
-	Root     string            `json:"root"`
-	CodeHash string            `json:"codeHash"`
-	Code     string            `json:"code"`
-	Storage  map[string]string `json:"storage"`
+	Balance   string            `json:"balance"`
+	MRUNumber uint64            `json:"mruNumber"`
+	Nonce     uint64            `json:"nonce"`
+	Root      string            `json:"root"`
+	CodeHash  string            `json:"codeHash"`
+	Code      string            `json:"code"`
+	Storage   map[string]string `json:"storage"`
 }
 
 type Dump struct {
@@ -55,12 +56,13 @@ func (db *StateDB) RawDump() Dump {
 
 		obj := newObject(nil, common.BytesToAddress(addr), data)
 		account := DumpAccount{
-			Balance:  data.Balance.String(),
-			Nonce:    data.Nonce,
-			Root:     common.Bytes2Hex(data.Root[:]),
-			CodeHash: common.Bytes2Hex(data.CodeHash),
-			Code:     common.Bytes2Hex(obj.Code(db.db)),
-			Storage:  make(map[string]string),
+			Balance:   data.Balance.String(),
+			MRUNumber: data.MRUNumber,
+			Nonce:     data.Nonce,
+			Root:      common.Bytes2Hex(data.Root[:]),
+			CodeHash:  common.Bytes2Hex(data.CodeHash),
+			Code:      common.Bytes2Hex(obj.Code(db.db)),
+			Storage:   make(map[string]string),
 		}
 		storageIt := trie.NewIterator(obj.getTrie(db.db).NodeIterator(nil))
 		for storageIt.Next() {

@@ -371,7 +371,12 @@ func (h priceHeap) Len() int      { return len(h) }
 func (h priceHeap) Swap(i, j int) { h[i], h[j] = h[j], h[i] }
 
 func (h priceHeap) Less(i, j int) bool {
-	// Sort primarily by price, returning the cheaper one
+	// Sort primarily by parity, return the larger one
+	if h[i].HasParity() && h[j].HasParity() && h[i].Parity() != h[j].Parity() {
+		return h[i].Parity() > h[j].Parity()
+	}
+
+	// Sort secondary by price, returning the cheaper one
 	switch h[i].GasPrice().Cmp(h[j].GasPrice()) {
 	case -1:
 		return true
@@ -437,7 +442,7 @@ func (l *txPricedList) Removed() {
 
 // Cap finds all the transactions below the given price threshold, drops them
 // from the priced list and returns them for further removal from the entire pool.
-func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) types.Transactions {
+func (l *txPricedList) Cap(shouldKeep func(*types.Transaction) bool, local *accountSet) types.Transactions {
 	drop := make(types.Transactions, 0, 128) // Remote underpriced transactions to drop
 	save := make(types.Transactions, 0, 64)  // Local underpriced transactions to keep
 
@@ -449,7 +454,7 @@ func (l *txPricedList) Cap(threshold *big.Int, local *accountSet) types.Transact
 			continue
 		}
 		// Stop the discards if we've reached the threshold
-		if tx.GasPrice().Cmp(threshold) >= 0 {
+		if shouldKeep(tx) {
 			save = append(save, tx)
 			break
 		}
@@ -489,6 +494,10 @@ func (l *txPricedList) Underpriced(tx *types.Transaction, local *accountSet) boo
 		return false
 	}
 	cheapest := []*types.Transaction(*l.items)[0]
+	if cheapest.HasParity() && tx.HasParity() {
+		// Only for after DCCS hardfork
+		return cheapest.Parity() <= tx.Parity()
+	}
 	return cheapest.GasPrice().Cmp(tx.GasPrice()) >= 0
 }
 
