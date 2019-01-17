@@ -19,6 +19,7 @@ package dccs
 import (
 	"bytes"
 	"encoding/json"
+	"math/big"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -349,6 +350,37 @@ func (s *Snapshot) inturn2(number uint64, signer common.Address) bool {
 	}
 	log.Trace("inturn", "offset", offset, "number", number, "len(signers)", len(signers))
 	return (number % uint64(len(signers))) == uint64(offset)
+}
+
+func signerOffset(signer common.Address, addrs []common.Address) (int, bool) {
+	for i, addr := range addrs {
+		if addr == signer {
+			return i, true
+		}
+	}
+	return -1, false
+}
+
+// difficulty returns the block weight at a given block height for a signer.
+// Turn-ness is in range of [1,n]. Valid difficulty is in range of [1,n].
+func (s *Snapshot) difficulty(number uint64, signer common.Address) *big.Int {
+	signers := s.signers()
+	offset, ok := signerOffset(signer, signers)
+	if !ok {
+		return common.Big0
+	}
+
+	n := len(signers)
+	turnness := int(number % uint64(n))
+
+	if turnness <= offset {
+		turnness += n
+	}
+	turnness -= offset
+
+	log.Info("difficulty", "offset", offset, "number", number, "len(signers)", n, "turnness", turnness)
+
+	return big.NewInt(int64(turnness))
 }
 
 // rlpHash return hash of an input

@@ -389,7 +389,7 @@ func (d *Dccs) verifyHeader2(chain consensus.ChainReader, header *types.Header, 
 	}
 	// Ensure that the block's difficulty is meaningful (may not be correct at this point)
 	if number > 0 {
-		if header.Difficulty == nil || (header.Difficulty.Cmp(diffInTurn) != 0 && header.Difficulty.Cmp(diffNoTurn) != 0) {
+		if header.Difficulty == nil {
 			return errInvalidDifficulty
 		}
 	}
@@ -732,11 +732,8 @@ func (d *Dccs) verifySeal2(chain consensus.ChainReader, header *types.Header, pa
 		}
 	}
 	// Ensure that the difficulty corresponds to the turn-ness of the signer
-	inturn := snap.inturn2(header.Number.Uint64(), signer)
-	if inturn && header.Difficulty.Cmp(diffInTurn) != 0 {
-		return errInvalidDifficulty
-	}
-	if !inturn && header.Difficulty.Cmp(diffNoTurn) != 0 {
+	signerDifficulty := snap.difficulty(header.Number.Uint64(), signer)
+	if header.Difficulty.Cmp(signerDifficulty) != 0 {
 		return errInvalidDifficulty
 	}
 	return nil
@@ -1048,7 +1045,7 @@ func (d *Dccs) seal2(chain consensus.ChainReader, block *types.Block, results ch
 	}
 	// Sweet, the protocol permits us to sign the block, wait for our time
 	delay := time.Unix(header.Time.Int64(), 0).Sub(time.Now()) // nolint: gosimple
-	if header.Difficulty.Cmp(diffNoTurn) == 0 {
+	if !snap.inturn2(number, signer) {
 		// It's not our turn explicitly to sign, delay it a bit
 		wiggle := d.calcDelayTime(snap, block, signer)
 		delay += wiggle
@@ -1141,10 +1138,7 @@ func CalcDifficulty(snap *Snapshot, signer common.Address) *big.Int {
 // that a new block should have based on the previous blocks in the chain and the
 // current signer.
 func CalcDifficulty2(snap *Snapshot, signer common.Address) *big.Int {
-	if snap.inturn2(snap.Number+1, signer) {
-		return new(big.Int).Set(diffInTurn)
-	}
-	return new(big.Int).Set(diffNoTurn)
+	return snap.difficulty(snap.Number+1, signer)
 }
 
 // SealHash returns the hash of a block prior to it being sealed.
