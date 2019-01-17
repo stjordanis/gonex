@@ -18,6 +18,7 @@
 package core
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -1023,7 +1024,7 @@ func (bc *BlockChain) writeBlockWithState(block *types.Block, receipts []*types.
 			if block.GasUsed() > currentBlock.GasUsed() {
 				reorg = true
 			} else if block.GasUsed() == currentBlock.GasUsed() {
-				if block.MixDigest().Big().Cmp(currentBlock.MixDigest().Big()) < 0 {
+				if bytes.Compare(block.Hash().Bytes(), currentBlock.Hash().Bytes()) < 0 {
 					reorg = true
 				}
 			}
