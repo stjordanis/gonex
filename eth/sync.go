@@ -175,8 +175,12 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	// Skip if lesser total difficulty, or same TD and same hash.
 	if cmp := pTd.Cmp(td); cmp < 0 {
 		return
-	} else if cmp == 0 && pHead == hash {
-		return
+	} else if cmp == 0 {
+		dccs := pm.blockchain.Config().IsDccs(currentBlock.Number())
+		if !dccs || pHead == hash {
+			return
+		}
+		// only download the 'same TD - diff hash' after the DCCS hardfork
 	}
 
 	// Otherwise try to sync with the downloader
