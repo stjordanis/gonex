@@ -731,9 +731,15 @@ func (d *Dccs) verifySeal2(chain consensus.ChainReader, header *types.Header, pa
 			return errUnauthorized
 		}
 	}
+
+	var parent *types.Header
+	if len(headers) > 0 {
+		parent = headers[0]
+	}
+
 	// Ensure that the difficulty corresponds to the turn-ness of the signer
-	signerDifficulty := snap.difficulty(header.Number.Uint64(), signer)
-	if header.Difficulty.Cmp(signerDifficulty) != 0 {
+	signerDifficulty := snap.difficulty(signer, parent)
+	if header.Difficulty.Uint64() != signerDifficulty {
 		return errInvalidDifficulty
 	}
 	return nil
@@ -846,7 +852,11 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	if err != nil {
 		return err
 	}
-	header.Difficulty = CalcDifficulty2(snap, d.signer)
+	parent := chain.GetHeader(header.ParentHash, number-1)
+	if parent == nil {
+		return consensus.ErrUnknownAncestor
+	}
+	header.Difficulty = CalcDifficulty2(snap, d.signer, parent)
 	log.Trace("header.Difficulty", "difficulty", header.Difficulty)
 
 	// Ensure the extra data has all it's components
@@ -866,10 +876,6 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	header.MixDigest = common.Hash{}
 
 	// Ensure the timestamp has the correct delay
-	parent := chain.GetHeader(header.ParentHash, number-1)
-	if parent == nil {
-		return consensus.ErrUnknownAncestor
-	}
 	header.Time = new(big.Int).Add(parent.Time, new(big.Int).SetUint64(d.config.Period))
 	if header.Time.Int64() < time.Now().Unix() {
 		header.Time = big.NewInt(time.Now().Unix())
@@ -1043,11 +1049,16 @@ func (d *Dccs) seal2(chain consensus.ChainReader, block *types.Block, results ch
 			return nil
 		}
 	}
+	var parent *types.Header
+	if len(headers) > 0 {
+		parent = headers[0]
+	}
 	// Sweet, the protocol permits us to sign the block, wait for our time
 	delay := time.Unix(header.Time.Int64(), 0).Sub(time.Now()) // nolint: gosimple
-	if !snap.inturn2(number, signer) {
+	if !snap.inturn2(signer, parent) {
 		// It's not our turn explicitly to sign, delay it a bit
-		wiggle := d.calcDelayTime(snap, block, signer)
+		offset := snap.offset(signer, parent)
+		wiggle := d.calcDelayTimeForOffset(offset)
 		delay += wiggle
 		log.Trace("Out-of-turn signing requested", "wiggle", common.PrettyDuration(wiggle))
 	}
@@ -1080,7 +1091,6 @@ func (d *Dccs) seal2(chain consensus.ChainReader, block *types.Block, results ch
 func (d *Dccs) calcDelayTime(snap *Snapshot, block *types.Block, signer common.Address) time.Duration {
 	header := block.Header()
 	number := header.Number.Uint64()
-	delay := time.Duration(0)
 	sigs := snap.signers2()
 	pos := 0
 	for seen, sig := range sigs {
@@ -1097,6 +1107,12 @@ func (d *Dccs) calcDelayTime(snap *Snapshot, block *types.Block, signer common.A
 	} else {
 		pos += len(sigs) - int(offset)
 	}
+	return d.calcDelayTimeForOffset(pos)
+}
+
+// calcDelayTime calculate delay time for current sealing node
+func (d *Dccs) calcDelayTimeForOffset(pos int) time.Duration {
+	delay := time.Duration(0)
 	wiggle := float64(0.0)
 	for i := 1; i <= pos; i++ {
 		wiggle += math.Floor(float64(1.387978)/(float64(0.002313279)*float64(i)+float64(0.00462659)) + float64(499.9994))
@@ -1115,7 +1131,7 @@ func (d *Dccs) CalcDifficulty(chain consensus.ChainReader, time uint64, parent *
 		if err != nil {
 			return nil
 		}
-		return CalcDifficulty2(snap, d.signer)
+		return CalcDifficulty2(snap, d.signer, parent)
 	}
 	snap, err := d.snapshot(chain, parent.Number.Uint64(), parent.Hash(), nil)
 	if err != nil {
@@ -1137,8 +1153,8 @@ func CalcDifficulty(snap *Snapshot, signer common.Address) *big.Int {
 // CalcDifficulty2 is the difficulty adjustment algorithm. It returns the difficulty
 // that a new block should have based on the previous blocks in the chain and the
 // current signer.
-func CalcDifficulty2(snap *Snapshot, signer common.Address) *big.Int {
-	return snap.difficulty(snap.Number+1, signer)
+func CalcDifficulty2(snap *Snapshot, signer common.Address, parent *types.Header) *big.Int {
+	return new(big.Int).SetUint64(snap.difficulty(signer, parent))
 }
 
 // SealHash returns the hash of a block prior to it being sealed.
