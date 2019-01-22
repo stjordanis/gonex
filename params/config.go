@@ -25,7 +25,7 @@ import (
 
 // Genesis hashes to enforce below configs on.
 var (
-	MainnetGenesisHash = common.HexToHash("0xe5bcb09e54c7e053d4bce234600126af6364af35933bad0dbcaa32d2cd1b5584")
+	MainnetGenesisHash = common.HexToHash("0xdca76d5b4994c4e6bc9fe927424a2bed4c3045bd3316b9c72e77247c69eb425b")
 	TestnetGenesisHash = common.HexToHash("0x004803b4cef4470352041a5da08440b8a280b3b9696be3430c2de831de4233d5")
 	RinkebyGenesisHash = common.HexToHash("0x6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177")
 	BurnAddress        = common.HexToAddress("0x0000000000000000000000000000000000000000")
@@ -43,9 +43,9 @@ var (
 		EIP155Block:         big.NewInt(3),
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
-		ConstantinopleBlock: nil,
-		DccsBlock:           big.NewInt(9000),
-		NtfContractAddress:  common.HexToAddress("0xd8b7f9ba2efa22c2111d4c0476a65faabfeef271"),
+		ConstantinopleBlock: big.NewInt(3000),
+		DccsBlock:           big.NewInt(3000),
+		NtfContractAddress:  common.HexToAddress("0x34fabc8d5f4fc879db7112861c755797d56946ad"),
 		Dccs: &DccsConfig{
 			Period: 2,
 			Epoch:  300,
