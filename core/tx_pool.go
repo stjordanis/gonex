@@ -522,7 +522,7 @@ func (pool *TxPool) SetParityLimit(parityLimit uint64) {
 
 	pool.parityLimit = parityLimit
 	if parityLimit == types.ParityUndefined ||
-		!pool.chainconfig.IsDccs(pool.chain.CurrentBlock().Number()) {
+		!pool.chainconfig.IsThangLong(pool.chain.CurrentBlock().Number()) {
 		return
 	}
 	for _, tx := range pool.priced.Cap(func(tx *types.Transaction) bool {
@@ -679,7 +679,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 		return ErrIntrinsicGas
 	}
 
-	if pool.chainconfig.IsDccs(pool.chain.CurrentBlock().Number()) {
+	if pool.chainconfig.IsThangLong(pool.chain.CurrentBlock().Number()) {
 		if !tx.HasParity() {
 			mruNumber := pool.currentState.GetMRUNumber(from)
 			if mruNumber == 0 {
@@ -688,7 +688,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 					mruNumber = pool.chain.CurrentBlock().NumberU64()
 				} else {
 					// old account from pre-hardfork
-					mruNumber = pool.chainconfig.DccsBlock.Uint64()
+					mruNumber = pool.chainconfig.ThangLongBlock.Uint64()
 				}
 			}
 

@@ -44,7 +44,7 @@ var (
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
 		ConstantinopleBlock: big.NewInt(3000),
-		DccsBlock:           big.NewInt(3000),
+		ThangLongBlock:      big.NewInt(3000),
 		NtfContractAddress:  common.HexToAddress("0x34fabc8d5f4fc879db7112861c755797d56946ad"),
 		Dccs: &DccsConfig{
 			Period: 2,
@@ -73,7 +73,7 @@ var (
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
 		ConstantinopleBlock: big.NewInt(5),
-		DccsBlock:           big.NewInt(0),
+		ThangLongBlock:      big.NewInt(0),
 		NtfContractAddress:  common.HexToAddress("0xcafecafecafecafecafecafecafecafecafecafe"),
 		Dccs: &DccsConfig{
 			Period: 2,
@@ -194,7 +194,7 @@ type ChainConfig struct {
 	EIP158Block *big.Int `json:"eip158Block,omitempty"` // EIP158 HF block
 
 	ByzantiumBlock      *big.Int       `json:"byzantiumBlock,omitempty"`      // Byzantium switch block (nil = no fork, 0 = already on byzantium)
-	DccsBlock           *big.Int       `json:"dccsBlock,omitempty"`           // Dccs switch block (nil = no fork, 0 = already activated)
+	ThangLongBlock      *big.Int       `json:"thangLongBlock,omitempty"`      // ThangLong switch block (nil = no fork, 0 = already activated)
 	NtfContractAddress  common.Address `json:"ntfContractAddress,omitempty"`  // NtfContractAddress nexty governance smart contract address
 	ConstantinopleBlock *big.Int       `json:"constantinopleBlock,omitempty"` // Constantinople switch block (nil = no fork, 0 = already activated)
 	EWASMBlock          *big.Int       `json:"ewasmBlock,omitempty"`          // EWASM switch block (nil = no fork, 0 = already activated)
@@ -248,7 +248,7 @@ func (c *ChainConfig) String() string {
 	default:
 		engine = "unknown"
 	}
-	return fmt.Sprintf("{ChainID: %v Homestead: %v DAO: %v DAOSupport: %v EIP150: %v EIP155: %v EIP158: %v Byzantium: %v Constantinople: %v Dccs: %v Contract: %v Engine: %v}",
+	return fmt.Sprintf("{ChainID: %v Homestead: %v DAO: %v DAOSupport: %v EIP150: %v EIP155: %v EIP158: %v Byzantium: %v Constantinople: %v Thang Long: %v Contract: %v Engine: %v}",
 		c.ChainID,
 		c.HomesteadBlock,
 		c.DAOForkBlock,
@@ -258,7 +258,7 @@ func (c *ChainConfig) String() string {
 		c.EIP158Block,
 		c.ByzantiumBlock,
 		c.ConstantinopleBlock,
-		c.DccsBlock,
+		c.ThangLongBlock,
 		c.NtfContractAddress.Hex(),
 		engine,
 	)
@@ -304,9 +304,9 @@ func (c *ChainConfig) IsEWASM(num *big.Int) bool {
 	return isForked(c.EWASMBlock, num)
 }
 
-// IsDccs returns whether num represents a block number after the Dccs fork
-func (c *ChainConfig) IsDccs(num *big.Int) bool {
-	return isForked(c.DccsBlock, num)
+// IsThangLong returns whether num represents a block number after the ThangLong fork
+func (c *ChainConfig) IsThangLong(num *big.Int) bool {
+	return isForked(c.ThangLongBlock, num)
 }
 
 // GasTable returns the gas table corresponding to the current phase (homestead or homestead reprice).
@@ -317,7 +317,7 @@ func (c *ChainConfig) GasTable(num *big.Int) GasTable {
 		return GasTableHomestead
 	}
 	switch {
-	case c.IsDccs(num):
+	case c.IsThangLong(num):
 		return GasTableDccs
 	case c.IsConstantinople(num):
 		return GasTableConstantinople
@@ -379,8 +379,8 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, head *big.Int) *Confi
 	if isForkIncompatible(c.EWASMBlock, newcfg.EWASMBlock, head) {
 		return newCompatError("ewasm fork block", c.EWASMBlock, newcfg.EWASMBlock)
 	}
-	if isForkIncompatible(c.DccsBlock, newcfg.DccsBlock, head) {
-		return newCompatError("dccs fork block", c.DccsBlock, newcfg.DccsBlock)
+	if isForkIncompatible(c.ThangLongBlock, newcfg.ThangLongBlock, head) {
+		return newCompatError("Thang Long fork block", c.ThangLongBlock, newcfg.ThangLongBlock)
 	}
 	return nil
 }
@@ -446,9 +446,9 @@ func (err *ConfigCompatError) Error() string {
 // Rules is a one time interface meaning that it shouldn't be used in between transition
 // phases.
 type Rules struct {
-	ChainID                                   *big.Int
-	IsHomestead, IsEIP150, IsEIP155, IsEIP158 bool
-	IsByzantium, IsConstantinople, IsDccs     bool
+	ChainID                                    *big.Int
+	IsHomestead, IsEIP150, IsEIP155, IsEIP158  bool
+	IsByzantium, IsConstantinople, IsThangLong bool
 }
 
 // Rules ensures c's ChainID is not nil.
@@ -465,6 +465,6 @@ func (c *ChainConfig) Rules(num *big.Int) Rules {
 		IsEIP158:         c.IsEIP158(num),
 		IsByzantium:      c.IsByzantium(num),
 		IsConstantinople: c.IsConstantinople(num),
-		IsDccs:           c.IsDccs(num),
+		IsThangLong:      c.IsThangLong(num),
 	}
 }

@@ -226,7 +226,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 		}
 	}
 	st.refundGas()
-	if st.evm.ChainConfig().IsDccs(st.evm.BlockNumber) {
+	if st.evm.ChainConfig().IsThangLong(st.evm.BlockNumber) {
 		st.state.AddBalance(params.BurnAddress, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
 	} else {
 		st.state.AddBalance(st.evm.Coinbase, new(big.Int).Mul(new(big.Int).SetUint64(st.gasUsed()), st.gasPrice))
@@ -241,7 +241,7 @@ func (st *StateTransition) TransitionDb() (ret []byte, usedGas uint64, failed bo
 // after the state transistion applied
 func (st *StateTransition) updateMRU() bool {
 	blockNumber := st.evm.BlockNumber
-	if !st.evm.ChainConfig().IsDccs(blockNumber) {
+	if !st.evm.ChainConfig().IsThangLong(blockNumber) {
 		return false
 	}
 
@@ -264,7 +264,7 @@ func (st *StateTransition) updateMRU() bool {
 
 	if mruNumber == 0 && st.state.GetNonce(from) > 0 {
 		// old account from pre-hardfork
-		mruNumber = st.evm.ChainConfig().DccsBlock.Uint64()
+		mruNumber = st.evm.ChainConfig().ThangLongBlock.Uint64()
 	}
 
 	if blockNumber.Uint64() <= mruNumber+1 {

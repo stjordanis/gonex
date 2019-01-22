@@ -56,7 +56,7 @@ func (w *wizard) makeGenesis() {
 			EIP158Block:         big.NewInt(3),
 			ByzantiumBlock:      big.NewInt(4),
 			ConstantinopleBlock: big.NewInt(5),
-			DccsBlock:           big.NewInt(0),
+			ThangLongBlock:      big.NewInt(0),
 			NtfContractAddress:  common.HexToAddress("0xcafecafecafecafecafecafecafecafecafecafe"),
 		},
 	}
@@ -156,8 +156,8 @@ func (w *wizard) makeGenesis() {
 		}
 
 		fmt.Println()
-		fmt.Printf("Which block should Dccs come into effect? (default = %v)\n", genesis.Config.DccsBlock)
-		genesis.Config.DccsBlock = w.readDefaultBigInt(genesis.Config.DccsBlock)
+		fmt.Printf("Which block should Thang Long come into effect? (default = %v)\n", genesis.Config.ThangLongBlock)
+		genesis.Config.ThangLongBlock = w.readDefaultBigInt(genesis.Config.ThangLongBlock)
 
 		fmt.Println()
 		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", genesis.Config.NtfContractAddress.Hex())
@@ -317,8 +317,8 @@ func (w *wizard) manageGenesis() {
 		w.conf.Genesis.Config.ConstantinopleBlock = w.readDefaultBigInt(w.conf.Genesis.Config.ConstantinopleBlock)
 
 		fmt.Println()
-		fmt.Printf("Which block should Dccs come into effect? (default = %v)\n", w.conf.Genesis.Config.DccsBlock)
-		w.conf.Genesis.Config.DccsBlock = w.readDefaultBigInt(w.conf.Genesis.Config.DccsBlock)
+		fmt.Printf("Which block should ThangLong come into effect? (default = %v)\n", w.conf.Genesis.Config.ThangLongBlock)
+		w.conf.Genesis.Config.ThangLongBlock = w.readDefaultBigInt(w.conf.Genesis.Config.ThangLongBlock)
 
 		fmt.Println()
 		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", w.conf.Genesis.Config.NtfContractAddress.Hex())

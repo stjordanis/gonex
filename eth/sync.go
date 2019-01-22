@@ -176,7 +176,7 @@ func (pm *ProtocolManager) synchronise(peer *peer) {
 	if cmp := pTd.Cmp(td); cmp < 0 {
 		return
 	} else if cmp == 0 {
-		dccs := pm.blockchain.Config().IsDccs(currentBlock.Number())
+		dccs := pm.blockchain.Config().IsThangLong(currentBlock.Number())
 		if !dccs || pHead == hash {
 			return
 		}
