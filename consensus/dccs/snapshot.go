@@ -19,7 +19,6 @@ package dccs
 import (
 	"bytes"
 	"encoding/json"
-	"math/big"
 	"sort"
 
 	"github.com/ethereum/go-ethereum/common"
@@ -343,16 +342,13 @@ func (s *Snapshot) inturn(number uint64, signer common.Address) bool {
 }
 
 // inturn2 returns if a signer at a given block height is in-turn or not.
-func (s *Snapshot) inturn2(number uint64, signer common.Address) bool {
-	signers, offset := s.signers2(), 0
-	for offset < len(signers) && signers[offset].Address != signer {
-		offset++
-	}
-	log.Trace("inturn", "offset", offset, "number", number, "len(signers)", len(signers))
-	return (number % uint64(len(signers))) == uint64(offset)
+func (s *Snapshot) inturn2(signer common.Address, parent *types.Header) bool {
+	offset := s.offset(signer, parent)
+	log.Trace("inturn", "offset", offset)
+	return offset == 0
 }
 
-func signerOffset(signer common.Address, signers []Signer) (int, bool) {
+func signerPosition(signer common.Address, signers []Signer) (int, bool) {
 	for i, sig := range signers {
 		if sig.Address == signer {
 			return i, true
@@ -361,26 +357,59 @@ func signerOffset(signer common.Address, signers []Signer) (int, bool) {
 	return -1, false
 }
 
-// difficulty returns the block weight at a given block height for a signer.
-// Turn-ness is in range of [1,n]. Valid difficulty is in range of [1,n].
-func (s *Snapshot) difficulty(number uint64, signer common.Address) *big.Int {
+func (s *Snapshot) offset(signer common.Address, parent *types.Header) int {
 	signers := s.signers2()
-	offset, ok := signerOffset(signer, signers)
-	if !ok {
-		return common.Big0
-	}
-
 	n := len(signers)
-	turnness := int(number % uint64(n))
-
-	if turnness <= offset {
-		turnness += n
+	if n <= 1 {
+		// no competition
+		return 0
 	}
-	turnness -= offset
 
-	log.Info("difficulty", "offset", offset, "number", number, "len(signers)", n, "turnness", turnness)
+	pos, ok := signerPosition(signer, signers)
+	if !ok {
+		// unable to find the signer possition
+		return -1
+	}
 
-	return big.NewInt(int64(turnness))
+	if parent == nil || (parent.Number.Uint64()+1)%s.config.Epoch == 0 {
+		// first block of an epoch, just return the rightful order
+		log.Info("the first block of an epoch")
+		return pos
+	}
+
+	prevSigner := parent.Coinbase
+	prevPos, ok := signerPosition(prevSigner, signers)
+	if !ok {
+		// unable to find the previous signer possition
+		return -1
+	}
+
+	offset := pos - prevPos - 1
+	if offset < 0 {
+		offset += n
+	}
+
+	log.Info("offset", "signer position", pos, "previous signer position", prevPos, "len(signers)", n, "offset", offset)
+
+	return offset
+}
+
+// difficulty returns the block weight at a given block height for a signer.
+// Turn-ness is the directional distant from a signer to the previous one,
+// following a circular order of the signers list.
+// @return maximum value = len(signers) if signer is right after the prevSigner (circularly)
+// @return minimum value = 1 if the signer is right before the prevSigner (circularly)
+// @return invalid value = 0 if the signer or parent signer is not on the sealer list
+func (s *Snapshot) difficulty(signer common.Address, parent *types.Header) uint64 {
+	offset := s.offset(signer, parent)
+	if offset < 0 {
+		return 0
+	}
+
+	signers := s.signers2()
+	n := len(signers)
+
+	return uint64(n - offset)
 }
 
 // rlpHash return hash of an input
