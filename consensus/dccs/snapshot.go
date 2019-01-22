@@ -343,7 +343,10 @@ func (s *Snapshot) inturn(number uint64, signer common.Address) bool {
 
 // inturn2 returns if a signer at a given block height is in-turn or not.
 func (s *Snapshot) inturn2(signer common.Address, parent *types.Header) bool {
-	offset := s.offset(signer, parent)
+	offset, err := s.offset(signer, parent)
+	if err != nil {
+		return false
+	}
 	log.Trace("inturn", "offset", offset)
 	return offset == 0
 }
@@ -357,31 +360,31 @@ func signerPosition(signer common.Address, signers []Signer) (int, bool) {
 	return -1, false
 }
 
-func (s *Snapshot) offset(signer common.Address, parent *types.Header) int {
+func (s *Snapshot) offset(signer common.Address, parent *types.Header) (int, error) {
 	signers := s.signers2()
 	n := len(signers)
 	if n <= 1 {
 		// no competition
-		return 0
+		return 0, nil
 	}
 
 	pos, ok := signerPosition(signer, signers)
 	if !ok {
 		// unable to find the signer possition
-		return -1
+		return n, errUnauthorized
 	}
 
 	if parent == nil || (parent.Number.Uint64()+1)%s.config.Epoch == 0 {
 		// first block of an epoch, just return the rightful order
 		log.Info("the first block of an epoch")
-		return pos
+		return pos, nil
 	}
 
 	prevSigner := parent.Coinbase
 	prevPos, ok := signerPosition(prevSigner, signers)
 	if !ok {
 		// unable to find the previous signer possition
-		return -1
+		return n, errUnauthorized
 	}
 
 	offset := pos - prevPos - 1
@@ -391,7 +394,7 @@ func (s *Snapshot) offset(signer common.Address, parent *types.Header) int {
 
 	log.Info("offset", "signer position", pos, "previous signer position", prevPos, "len(signers)", n, "offset", offset)
 
-	return offset
+	return offset, nil
 }
 
 // difficulty returns the block weight at a given block height for a signer.
@@ -401,8 +404,8 @@ func (s *Snapshot) offset(signer common.Address, parent *types.Header) int {
 // @return minimum value = 1 if the signer is right before the prevSigner (circularly)
 // @return invalid value = 0 if the signer or parent signer is not on the sealer list
 func (s *Snapshot) difficulty(signer common.Address, parent *types.Header) uint64 {
-	offset := s.offset(signer, parent)
-	if offset < 0 {
+	offset, err := s.offset(signer, parent)
+	if err != nil {
 		return 0
 	}
 

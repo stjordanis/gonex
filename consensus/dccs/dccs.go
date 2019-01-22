@@ -1057,7 +1057,10 @@ func (d *Dccs) seal2(chain consensus.ChainReader, block *types.Block, results ch
 	delay := time.Unix(header.Time.Int64(), 0).Sub(time.Now()) // nolint: gosimple
 	if !snap.inturn2(signer, parent) {
 		// It's not our turn explicitly to sign, delay it a bit
-		offset := snap.offset(signer, parent)
+		offset, err := snap.offset(signer, parent)
+		if err != nil {
+			return err
+		}
 		wiggle := d.calcDelayTimeForOffset(offset)
 		delay += wiggle
 		log.Trace("Out-of-turn signing requested", "wiggle", common.PrettyDuration(wiggle))
