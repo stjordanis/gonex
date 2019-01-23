@@ -210,7 +210,7 @@ func (evm *EVM) Call(caller ContractRef, addr common.Address, input []byte, gas 
 			return nil, gas, nil
 		}
 		evm.StateDB.CreateAccount(addr)
-		if evm.ChainConfig().IsDccs(evm.BlockNumber) {
+		if evm.ChainConfig().IsThangLong(evm.BlockNumber) {
 			evm.StateDB.SetMRUNumber(addr, evm.BlockNumber.Uint64())
 		}
 	}

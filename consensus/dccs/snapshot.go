@@ -380,7 +380,11 @@ func (s *Snapshot) offset(signer common.Address, parent *types.Header) (int, err
 		return pos, nil
 	}
 
-	prevSigner := parent.Coinbase
+	// Resolve the last authorization key and check against signer
+	prevSigner, err := ecrecover(parent, s.sigcache)
+	if err != nil {
+		return 0, err
+	}
 	prevPos, ok := signerPosition(prevSigner, signers)
 	if !ok {
 		// unable to find the previous signer possition
