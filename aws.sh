@@ -22,15 +22,15 @@ shift $((OPTIND-1))
 BLOCK_TIME=2
 BOOTNODE_NAME=BootNode
 INSTANCE_NAME=LoadTest
-INSTANCE_TYPE=t3.xlarge
-ENDPOINT_INSTANCE_TYPE=c5d.2xlarge
+INSTANCE_TYPE=t3.micro
+ENDPOINT_INSTANCE_TYPE=t3.small
 declare -A IMAGE_ID
 IMAGE_ID=(
-	[us-east-1]=ami-0ac019f4fcb7cb7e6
+	# [us-east-1]=ami-0ac019f4fcb7cb7e6
 	[us-east-2]=ami-0f65671a86f061fcd
-	# [us-west-1]=ami-063aa838bd7631e0b
-	# [us-west-2]=ami-0bbe6b35405ecebdb
-	# [ap-southeast-1]=ami-0c5199d385b432989
+	[us-west-1]=ami-063aa838bd7631e0b
+	[us-west-2]=ami-0bbe6b35405ecebdb
+	[ap-southeast-1]=ami-0c5199d385b432989
 	# [ap-southeast-2]=ami-07a3bd4944eb120a0
 	# [ca-central-1]=ami-0427e8367e3770df1
 	# [eu-central-1]=ami-0bdf93799014acdc4
@@ -38,8 +38,8 @@ IMAGE_ID=(
 	# [eu-west-3]=ami-08182c55a1c188dee
 )
 KEY_NAME=dvietha@gmail.com
-BOOTNODE_REGION=us-east-1
-ENDPOINT_REGION=us-east-1
+BOOTNODE_REGION=us-east-2
+ENDPOINT_REGION=us-east-2
 ETHSTATS=nexty-testnet@198.13.40.85:80
 CONTRACT_ADDR=cafecafecafecafecafecafecafecafecafecafe
 EPOCH=90
