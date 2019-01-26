@@ -50,7 +50,7 @@ var (
 			Epoch:  300,
 			// ThangLong hard-fork
 			ThangLongBlock: big.NewInt(3000),
-			ThangLongEpoch: 0,
+			ThangLongEpoch: 300,
 		},
 	}
 
@@ -81,7 +81,7 @@ var (
 			Epoch:  600,
 			// ThangLong hard-fork
 			ThangLongBlock: big.NewInt(0),
-			ThangLongEpoch: 60,
+			ThangLongEpoch: 600,
 		},
 	}
 
