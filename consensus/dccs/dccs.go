@@ -300,7 +300,7 @@ func (d *Dccs) verifyHeader(chain consensus.ChainReader, header *types.Header, p
 		return consensus.ErrFutureBlock
 	}
 	// Checkpoint blocks need to enforce zero beneficiary
-	checkpoint := (number % d.config.Epoch) == 0
+	checkpoint := d.config.IsCheckpoint(number)
 	if checkpoint && header.Coinbase != (common.Address{}) {
 		return errInvalidCheckpointBeneficiary
 	}
@@ -363,7 +363,7 @@ func (d *Dccs) verifyHeader2(chain consensus.ChainReader, header *types.Header, 
 		return consensus.ErrFutureBlock
 	}
 
-	checkpoint := (number % d.config.Epoch) == 0
+	checkpoint := d.config.IsCheckpoint(number)
 	// Check that the extra-data contains both the vanity and signature
 	if len(header.Extra) < extraVanity {
 		return errMissingVanity
@@ -430,7 +430,7 @@ func (d *Dccs) verifyCascadingFields(chain consensus.ChainReader, header *types.
 		return err
 	}
 	// If the block is a checkpoint block, verify the signer list
-	if number%d.config.Epoch == 0 {
+	if d.config.IsCheckpoint(number) {
 		signers := make([]byte, len(snap.Signers)*common.AddressLength)
 		for i, signer := range snap.signers() {
 			copy(signers[i*common.AddressLength:], signer[:])
@@ -473,7 +473,7 @@ func (d *Dccs) verifyCascadingFields2(chain consensus.ChainReader, header *types
 		return err
 	}
 	// If the block is a checkpoint block, verify the signer list
-	if number%d.config.Epoch == 0 {
+	if d.config.IsCheckpoint(number) {
 		signers := make([]byte, len(snap.Signers)*common.AddressLength)
 		for i, signer := range snap.signers2() {
 			copy(signers[i*common.AddressLength:], signer.Address[:])
@@ -509,7 +509,7 @@ func (d *Dccs) snapshot(chain consensus.ChainReader, number uint64, hash common.
 			}
 		}
 		// If we're at an checkpoint block, make a snapshot if it's known
-		if number == 0 || (number%d.config.Epoch == 0 && chain.GetHeaderByNumber(number-1) == nil) {
+		if number == 0 || (d.config.IsCheckpoint(number) && chain.GetHeaderByNumber(number-1) == nil) {
 			checkpoint := chain.GetHeaderByNumber(number)
 			if checkpoint != nil {
 				hash := checkpoint.Hash()
@@ -573,7 +573,7 @@ func (d *Dccs) snapshot2(chain consensus.ChainReader, number uint64, hash common
 	)
 	for snap == nil {
 		// Get signers from Nexty staking smart contract at the latest epoch checkpoint from block number
-		cp := ((number + 1) / d.config.Epoch) * d.config.Epoch
+		cp := d.config.Checkpoint(number + 1)
 		// Get genesis block as checkpoint for 1st epoch
 		if cp <= 0 {
 			cp = 0
@@ -767,7 +767,7 @@ func (d *Dccs) prepare(chain consensus.ChainReader, header *types.Header) error 
 	if err != nil {
 		return err
 	}
-	if number%d.config.Epoch != 0 {
+	if d.config.IsCheckpoint(number) {
 		d.lock.RLock()
 
 		// Gather all the proposals that make sense voting on
@@ -797,7 +797,7 @@ func (d *Dccs) prepare(chain consensus.ChainReader, header *types.Header) error 
 	}
 	header.Extra = header.Extra[:extraVanity]
 
-	if number%d.config.Epoch == 0 {
+	if d.config.IsCheckpoint(number) {
 		for _, signer := range snap.signers() {
 			header.Extra = append(header.Extra, signer[:]...)
 		}
@@ -825,7 +825,7 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	header.Nonce = types.BlockNonce{}
 	// Get the beneficiary of signer from smart contract and set to header's coinbase to give sealing reward later
 	number := header.Number.Uint64()
-	cp := (number / d.config.Epoch) * d.config.Epoch
+	cp := d.config.Checkpoint(number)
 	// get genesis block as checkpoint for 1st epoch
 	if cp <= 0 {
 		cp = 0
@@ -865,7 +865,7 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	}
 	header.Extra = header.Extra[:extraVanity]
 
-	if number%d.config.Epoch == 0 {
+	if d.config.IsCheckpoint(number) {
 		for _, signer := range snap.signers2() {
 			header.Extra = append(header.Extra, signer.Address[:]...)
 		}
@@ -1101,7 +1101,7 @@ func (d *Dccs) calcDelayTime(snap *Snapshot, block *types.Block, signer common.A
 			pos = seen
 		}
 	}
-	cp := (number / d.config.Epoch) * d.config.Epoch
+	cp := d.config.Checkpoint(number)
 	total := uint64(len(sigs))
 	offset := (number - cp) - (number-cp)/total*total
 	log.Trace("calcDelayTime", "number", number, "checkpoint", cp, "len", uint64(len(sigs)), "offset", offset)
@@ -1213,7 +1213,7 @@ func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, hea
 	var headers []*types.Header
 	number := header.Number.Uint64()
 	// Reset the recent headers at checkpoint to ensure the in-turn signer
-	if number%d.config.Epoch == 0 {
+	if d.config.IsCheckpoint(number) {
 		return headers, nil
 	}
 	limit := len(snap.Signers) / 2
@@ -1239,7 +1239,7 @@ func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, hea
 			}
 		}
 		headers = append(headers, h)
-		if num%d.config.Epoch == 0 {
+		if d.config.IsCheckpoint(num) {
 			break
 		}
 		num, hash = num-1, h.ParentHash

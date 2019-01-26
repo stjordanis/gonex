@@ -230,6 +230,21 @@ type DccsConfig struct {
 	Epoch  uint64 `json:"epoch"`  // Epoch length to reset votes and checkpoint
 }
 
+// PositionInEpoch returns the offset of a block from the start of an epoch
+func (c *DccsConfig) PositionInEpoch(number uint64) uint64 {
+	return number % c.Epoch
+}
+
+// IsCheckpoint returns whether a block is at the start of an epoch
+func (c *DccsConfig) IsCheckpoint(number uint64) bool {
+	return c.PositionInEpoch(number) == 0
+}
+
+// Checkpoint returns the epoch block for this block
+func (c *DccsConfig) Checkpoint(number uint64) uint64 {
+	return number - c.PositionInEpoch(number)
+}
+
 // String implements the stringer interface, returning the consensus engine details.
 func (c *DccsConfig) String() string {
 	return "dccs"
