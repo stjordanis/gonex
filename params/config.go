@@ -48,7 +48,7 @@ var (
 		Dccs: &DccsConfig{
 			Period: 2,
 			Epoch:  300,
-
+			// ThangLong hard-fork
 			ThangLongBlock: big.NewInt(3000),
 			ThangLongEpoch: 0,
 		},
@@ -79,7 +79,7 @@ var (
 		Dccs: &DccsConfig{
 			Period: 2,
 			Epoch:  600,
-
+			// ThangLong hard-fork
 			ThangLongBlock: big.NewInt(0),
 			ThangLongEpoch: 60,
 		},
