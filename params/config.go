@@ -262,7 +262,7 @@ func (c *DccsConfig) String() string {
 
 // String implements the fmt.Stringer interface.
 func (c *ChainConfig) String() string {
-	thangLongBlock := new(big.Int)
+	var thangLongBlock *big.Int
 	var engine interface{}
 	switch {
 	case c.Ethash != nil:
