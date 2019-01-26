@@ -232,6 +232,18 @@ func New(config *params.DccsConfig, db ethdb.Database) *Dccs {
 	if conf.Epoch == 0 {
 		conf.Epoch = epochLength
 	}
+	if conf.ThangLongBlock.Sign() > 0 && conf.ThangLongEpoch > 0 {
+		// sensure that the hard-fork block must be divisible by both the old and new epoch value
+		tlBlock := conf.ThangLongBlock.Uint64()
+		if tlBlock%conf.Epoch != 0 {
+			log.Crit("Unable to create DCCS consensus engine", "ThangLong block", tlBlock, "Epoch", conf.Epoch)
+			return nil
+		}
+		if tlBlock%conf.ThangLongEpoch != 0 {
+			log.Crit("Unable to create DCCS consensus engine", "ThangLong block", tlBlock, "ThangLongEpoch", conf.ThangLongEpoch)
+			return nil
+		}
+	}
 	// Allocate the snapshot caches and create the engine
 	recents, _ := lru.NewARC(inmemorySnapshots)
 	signatures, _ := lru.NewARC(inmemorySignatures)
@@ -1184,7 +1196,7 @@ func (d *Dccs) APIs(chain consensus.ChainReader) []rpc.API {
 // calculateRewards calculate reward for block sealer
 func (d *Dccs) calculateRewards(chain consensus.ChainReader, state *state.StateDB, header *types.Header) {
 	number := header.Number.Uint64()
-	yo := (number - chain.Config().ThangLongBlock.Uint64()) / blockPerYear.Uint64()
+	yo := (number - chain.Config().Dccs.ThangLongBlock.Uint64()) / blockPerYear.Uint64()
 	per := yo
 	if per > 5 {
 		per = 5

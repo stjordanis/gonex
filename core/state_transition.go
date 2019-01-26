@@ -264,7 +264,7 @@ func (st *StateTransition) updateMRU() bool {
 
 	if mruNumber == 0 && st.state.GetNonce(from) > 0 {
 		// old account from pre-hardfork
-		mruNumber = st.evm.ChainConfig().ThangLongBlock.Uint64()
+		mruNumber = st.evm.ChainConfig().Dccs.ThangLongBlock.Uint64()
 	}
 
 	if blockNumber.Uint64() <= mruNumber+1 {

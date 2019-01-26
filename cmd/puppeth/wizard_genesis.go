@@ -56,7 +56,6 @@ func (w *wizard) makeGenesis() {
 			EIP158Block:         big.NewInt(3),
 			ByzantiumBlock:      big.NewInt(4),
 			ConstantinopleBlock: big.NewInt(5),
-			ThangLongBlock:      big.NewInt(0),
 			NtfContractAddress:  common.HexToAddress("0xcafecafecafecafecafecafecafecafecafecafe"),
 		},
 	}
@@ -119,6 +118,9 @@ func (w *wizard) makeGenesis() {
 		genesis.Config.Dccs = &params.DccsConfig{
 			Period: 2,
 			Epoch:  30000,
+
+			ThangLongBlock: big.NewInt(0),
+			ThangLongEpoch: 3000,
 		}
 		fmt.Println()
 		fmt.Println("How many seconds should blocks take? (default = 2)")
@@ -156,8 +158,12 @@ func (w *wizard) makeGenesis() {
 		}
 
 		fmt.Println()
-		fmt.Printf("Which block should Thang Long come into effect? (default = %v)\n", genesis.Config.ThangLongBlock)
-		genesis.Config.ThangLongBlock = w.readDefaultBigInt(genesis.Config.ThangLongBlock)
+		fmt.Printf("Which block should Thang Long come into effect? (default = %v)\n", genesis.Config.Dccs.ThangLongBlock)
+		genesis.Config.Dccs.ThangLongBlock = w.readDefaultBigInt(genesis.Config.Dccs.ThangLongBlock)
+
+		fmt.Println()
+		fmt.Println("How many blocks should epoch take after the Thang Long hardfork? (default = %v)", genesis.Config.Dccs.ThangLongEpoch)
+		genesis.Config.Dccs.ThangLongEpoch = uint64(w.readDefaultInt(int(genesis.Config.Dccs.ThangLongEpoch)))
 
 		fmt.Println()
 		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", genesis.Config.NtfContractAddress.Hex())
@@ -316,9 +322,11 @@ func (w *wizard) manageGenesis() {
 		fmt.Printf("Which block should Constantinople come into effect? (default = %v)\n", w.conf.Genesis.Config.ConstantinopleBlock)
 		w.conf.Genesis.Config.ConstantinopleBlock = w.readDefaultBigInt(w.conf.Genesis.Config.ConstantinopleBlock)
 
-		fmt.Println()
-		fmt.Printf("Which block should ThangLong come into effect? (default = %v)\n", w.conf.Genesis.Config.ThangLongBlock)
-		w.conf.Genesis.Config.ThangLongBlock = w.readDefaultBigInt(w.conf.Genesis.Config.ThangLongBlock)
+		if w.conf.Genesis.Config.Dccs != nil {
+			fmt.Println()
+			fmt.Printf("Which block should ThangLong come into effect? (default = %v)\n", w.conf.Genesis.Config.Dccs.ThangLongBlock)
+			w.conf.Genesis.Config.Dccs.ThangLongBlock = w.readDefaultBigInt(w.conf.Genesis.Config.Dccs.ThangLongBlock)
+		}
 
 		fmt.Println()
 		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", w.conf.Genesis.Config.NtfContractAddress.Hex())
