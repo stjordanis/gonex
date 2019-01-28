@@ -213,7 +213,7 @@ func (s *Snapshot) apply(headers []*types.Header) (*Snapshot, error) {
 	for _, header := range headers {
 		// Remove any votes on checkpoint blocks
 		number := header.Number.Uint64()
-		if number%s.config.Epoch == 0 {
+		if s.config.IsCheckpoint(number) {
 			snap.Votes = nil
 			snap.Tally = make(map[common.Address]Tally)
 		}
@@ -374,7 +374,7 @@ func (s *Snapshot) offset(signer common.Address, parent *types.Header) (int, err
 		return n, errUnauthorized
 	}
 
-	if parent == nil || (parent.Number.Uint64()+1)%s.config.Epoch == 0 {
+	if parent == nil || s.config.IsCheckpoint(parent.Number.Uint64()+1) {
 		// first block of an epoch, just return the rightful order
 		log.Info("the first block of an epoch")
 		return pos, nil

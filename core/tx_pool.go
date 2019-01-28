@@ -688,7 +688,7 @@ func (pool *TxPool) validateTx(tx *types.Transaction, local bool) error {
 					mruNumber = pool.chain.CurrentBlock().NumberU64()
 				} else {
 					// old account from pre-hardfork
-					mruNumber = pool.chainconfig.ThangLongBlock.Uint64()
+					mruNumber = pool.chainconfig.Dccs.ThangLongBlock.Uint64()
 				}
 			}
 

@@ -44,11 +44,13 @@ var (
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
 		ConstantinopleBlock: big.NewInt(3000),
-		ThangLongBlock:      big.NewInt(3000),
 		NtfContractAddress:  common.HexToAddress("0x34fabc8d5f4fc879db7112861c755797d56946ad"),
 		Dccs: &DccsConfig{
 			Period: 2,
 			Epoch:  300,
+			// ThangLong hard-fork
+			ThangLongBlock: big.NewInt(3000),
+			ThangLongEpoch: 300,
 		},
 	}
 
@@ -73,11 +75,13 @@ var (
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
 		ConstantinopleBlock: big.NewInt(5),
-		ThangLongBlock:      big.NewInt(0),
 		NtfContractAddress:  common.HexToAddress("0xcafecafecafecafecafecafecafecafecafecafe"),
 		Dccs: &DccsConfig{
 			Period: 2,
 			Epoch:  600,
+			// ThangLong hard-fork
+			ThangLongBlock: big.NewInt(0),
+			ThangLongEpoch: 600,
 		},
 	}
 
@@ -140,23 +144,23 @@ var (
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, new(EthashConfig), nil, nil}
+	AllEthashProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, new(EthashConfig), nil, nil}
 
 	// AllCliqueProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Clique consensus.
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, nil, &CliqueConfig{Period: 0, Epoch: 30000}, nil}
+	AllCliqueProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, nil, &CliqueConfig{Period: 0, Epoch: 30000}, nil}
 
 	// AllDccsProtocolChanges contains every protocol change (EIPs) introduced
 	// and accepted by the Ethereum core developers into the Dccs consensus.
 	//
 	// This configuration is intentionally not using keyed fields to force anyone
 	// adding flags to the config to also have to set these fields.
-	AllDccsProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, nil, nil, &DccsConfig{Period: 0, Epoch: 30000}}
+	AllDccsProtocolChanges = &ChainConfig{big.NewInt(1337), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, nil, nil, &DccsConfig{Period: 0, Epoch: 30000, ThangLongBlock: big.NewInt(0), ThangLongEpoch: 3000}}
 
-	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, new(EthashConfig), nil, nil}
+	TestChainConfig = &ChainConfig{big.NewInt(1), big.NewInt(0), nil, false, big.NewInt(0), common.Hash{}, big.NewInt(0), big.NewInt(0), big.NewInt(0), common.HexToAddress("0x0"), big.NewInt(0), nil, new(EthashConfig), nil, nil}
 
 	TestRules = TestChainConfig.Rules(new(big.Int))
 )
@@ -194,7 +198,6 @@ type ChainConfig struct {
 	EIP158Block *big.Int `json:"eip158Block,omitempty"` // EIP158 HF block
 
 	ByzantiumBlock      *big.Int       `json:"byzantiumBlock,omitempty"`      // Byzantium switch block (nil = no fork, 0 = already on byzantium)
-	ThangLongBlock      *big.Int       `json:"thangLongBlock,omitempty"`      // ThangLong switch block (nil = no fork, 0 = already activated)
 	NtfContractAddress  common.Address `json:"ntfContractAddress,omitempty"`  // NtfContractAddress nexty governance smart contract address
 	ConstantinopleBlock *big.Int       `json:"constantinopleBlock,omitempty"` // Constantinople switch block (nil = no fork, 0 = already activated)
 	EWASMBlock          *big.Int       `json:"ewasmBlock,omitempty"`          // EWASM switch block (nil = no fork, 0 = already activated)
@@ -225,9 +228,31 @@ func (c *CliqueConfig) String() string {
 }
 
 // DccsConfig is the consensus engine configs for proof-of-foundation based sealing.
+// All epoch changing hardforks must have the activate block number divisible by both old and new epoch.
 type DccsConfig struct {
 	Period uint64 `json:"period"` // Number of seconds between blocks to enforce
 	Epoch  uint64 `json:"epoch"`  // Epoch length to reset votes and checkpoint
+
+	ThangLongBlock *big.Int `json:"thangLongBlock,omitempty"` // ThangLong switch block (nil = no fork, 0 = already activated)
+	ThangLongEpoch uint64   `json:"thangLongEpoch"`           // Epoch length to reset votes and checkpoint
+}
+
+// PositionInEpoch returns the offset of a block from the start of an epoch
+func (c *DccsConfig) PositionInEpoch(number uint64) uint64 {
+	if c.IsThangLong(new(big.Int).SetUint64(number)) {
+		return number % c.ThangLongEpoch
+	}
+	return number % c.Epoch
+}
+
+// IsCheckpoint returns whether a block is at the start of an epoch
+func (c *DccsConfig) IsCheckpoint(number uint64) bool {
+	return c.PositionInEpoch(number) == 0
+}
+
+// Checkpoint returns the epoch block for this block
+func (c *DccsConfig) Checkpoint(number uint64) uint64 {
+	return number - c.PositionInEpoch(number)
 }
 
 // String implements the stringer interface, returning the consensus engine details.
@@ -237,6 +262,7 @@ func (c *DccsConfig) String() string {
 
 // String implements the fmt.Stringer interface.
 func (c *ChainConfig) String() string {
+	var thangLongBlock *big.Int
 	var engine interface{}
 	switch {
 	case c.Ethash != nil:
@@ -245,6 +271,7 @@ func (c *ChainConfig) String() string {
 		engine = c.Clique
 	case c.Dccs != nil:
 		engine = c.Dccs
+		thangLongBlock = c.Dccs.ThangLongBlock
 	default:
 		engine = "unknown"
 	}
@@ -258,7 +285,7 @@ func (c *ChainConfig) String() string {
 		c.EIP158Block,
 		c.ByzantiumBlock,
 		c.ConstantinopleBlock,
-		c.ThangLongBlock,
+		thangLongBlock,
 		c.NtfContractAddress.Hex(),
 		engine,
 	)
@@ -306,6 +333,11 @@ func (c *ChainConfig) IsEWASM(num *big.Int) bool {
 
 // IsThangLong returns whether num represents a block number after the ThangLong fork
 func (c *ChainConfig) IsThangLong(num *big.Int) bool {
+	return c.Dccs != nil && c.Dccs.IsThangLong(num)
+}
+
+// IsThangLong returns whether num represents a block number after the ThangLong fork
+func (c *DccsConfig) IsThangLong(num *big.Int) bool {
 	return isForked(c.ThangLongBlock, num)
 }
 
@@ -379,8 +411,10 @@ func (c *ChainConfig) checkCompatible(newcfg *ChainConfig, head *big.Int) *Confi
 	if isForkIncompatible(c.EWASMBlock, newcfg.EWASMBlock, head) {
 		return newCompatError("ewasm fork block", c.EWASMBlock, newcfg.EWASMBlock)
 	}
-	if isForkIncompatible(c.ThangLongBlock, newcfg.ThangLongBlock, head) {
-		return newCompatError("Thang Long fork block", c.ThangLongBlock, newcfg.ThangLongBlock)
+	if c.Dccs != nil && newcfg.Dccs != nil {
+		if isForkIncompatible(c.Dccs.ThangLongBlock, newcfg.Dccs.ThangLongBlock, head) {
+			return newCompatError("Thang Long fork block", c.Dccs.ThangLongBlock, newcfg.Dccs.ThangLongBlock)
+		}
 	}
 	return nil
 }
