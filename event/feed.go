@@ -18,8 +18,11 @@ package event
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"sync"
+
+	"github.com/ethereum/go-ethereum/log"
 )
 
 var errBadChannel = errors.New("event: Subscribe argument does not have sendable channel type")
@@ -127,10 +130,12 @@ func (f *Feed) remove(sub *feedSub) {
 // Send delivers to all subscribed channels simultaneously.
 // It returns the number of subscribers that the value was sent to.
 func (f *Feed) Send(value interface{}) (nsent int) {
+	log.Error("send call")
 	rvalue := reflect.ValueOf(value)
 
 	f.once.Do(f.init)
 	<-f.sendLock
+	log.Error("send lock")
 
 	// Add new cases from the inbox after taking the send lock.
 	f.mu.Lock()
@@ -152,6 +157,7 @@ func (f *Feed) Send(value interface{}) (nsent int) {
 	// of sendCases. When a send succeeds, the corresponding case moves to the end of
 	// 'cases' and it shrinks by one element.
 	cases := f.sendCases
+	log.Error("func (f *Feed) Send", "cases", len(cases), "list", cases.String())
 	for {
 		// Fast path: try sending without blocking before adding to the select set.
 		// This should usually succeed if subscribers are fast enough and have free
@@ -159,8 +165,11 @@ func (f *Feed) Send(value interface{}) (nsent int) {
 		for i := firstSubSendCase; i < len(cases); i++ {
 			if cases[i].Chan.TrySend(rvalue) {
 				nsent++
+				log.Error("TrySend success", "n", nsent)
 				cases = cases.deactivate(i)
 				i--
+			} else {
+				log.Error("TrySend failure", "n", nsent, "case", cases[i], "cases", len(cases), "list", cases.String())
 			}
 		}
 		if len(cases) == firstSubSendCase {
@@ -186,6 +195,7 @@ func (f *Feed) Send(value interface{}) (nsent int) {
 		f.sendCases[i].Send = reflect.Value{}
 	}
 	f.sendLock <- struct{}{}
+	log.Error("sendLock release successfully!", "n", nsent)
 	return nsent
 }
 
@@ -231,18 +241,18 @@ func (cs caseList) deactivate(index int) caseList {
 	return cs[:last]
 }
 
-// func (cs caseList) String() string {
-//     s := "["
-//     for i, cas := range cs {
-//             if i != 0 {
-//                     s += ", "
-//             }
-//             switch cas.Dir {
-//             case reflect.SelectSend:
-//                     s += fmt.Sprintf("%v<-", cas.Chan.Interface())
-//             case reflect.SelectRecv:
-//                     s += fmt.Sprintf("<-%v", cas.Chan.Interface())
-//             }
-//     }
-//     return s + "]"
-// }
+func (cs caseList) String() string {
+	s := "["
+	for i, cas := range cs {
+		if i != 0 {
+			s += ", "
+		}
+		switch cas.Dir {
+		case reflect.SelectSend:
+			s += fmt.Sprintf("%v<-", cas.Chan.Interface())
+		case reflect.SelectRecv:
+			s += fmt.Sprintf("<-%v", cas.Chan.Interface())
+		}
+	}
+	return s + "]"
+}

@@ -205,6 +205,7 @@ func newWorker(config *params.ChainConfig, engine consensus.Engine, eth Backend,
 	}
 	// Subscribe NewTxsEvent for tx pool
 	worker.txsSub = eth.TxPool().SubscribeNewTxsEvent(worker.txsCh)
+	log.Error("worker - Subscribe NewTxsEvent for tx pool")
 	// Subscribe events for blockchain
 	worker.chainHeadSub = eth.BlockChain().SubscribeChainHeadEvent(worker.chainHeadCh)
 	worker.chainSideSub = eth.BlockChain().SubscribeChainSideEvent(worker.chainSideCh)
