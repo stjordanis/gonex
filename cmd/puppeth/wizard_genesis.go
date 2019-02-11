@@ -166,9 +166,9 @@ func (w *wizard) makeGenesis() {
 		genesis.Config.Dccs.ThangLongEpoch = uint64(w.readDefaultInt(int(genesis.Config.Dccs.ThangLongEpoch)))
 
 		fmt.Println()
-		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", genesis.Config.Dccs.ThangLongAddress.Hex())
+		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", genesis.Config.Dccs.Contract.Hex())
 		if address := w.readAddress(); address != nil {
-			genesis.Config.Dccs.ThangLongAddress = *address
+			genesis.Config.Dccs.Contract = *address
 		}
 
 		// Generate a new random account and a funded simulator
