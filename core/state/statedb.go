@@ -518,7 +518,7 @@ func (db *StateDB) Copy() *StateDB {
 		refund:            db.refund,
 		logs:              make(map[common.Hash][]*types.Log, len(db.logs)),
 		logSize:           db.logSize,
-		preimages:         make(map[common.Hash][]byte),
+		preimages:         make(map[common.Hash][]byte, len(db.preimages)),
 		journal:           newJournal(),
 	}
 	// Copy the dirty states, logs, and preimages
