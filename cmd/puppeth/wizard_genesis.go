@@ -162,7 +162,7 @@ func (w *wizard) makeGenesis() {
 		genesis.Config.Dccs.ThangLongBlock = w.readDefaultBigInt(genesis.Config.Dccs.ThangLongBlock)
 
 		fmt.Println()
-		fmt.Println("How many blocks should epoch take after the Thang Long hardfork? (default = %v)", genesis.Config.Dccs.ThangLongEpoch)
+		fmt.Printf("How many blocks should epoch take after the Thang Long hardfork? (default = %v)\n", genesis.Config.Dccs.ThangLongEpoch)
 		genesis.Config.Dccs.ThangLongEpoch = uint64(w.readDefaultInt(int(genesis.Config.Dccs.ThangLongEpoch)))
 
 		fmt.Println()
