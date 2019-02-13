@@ -56,7 +56,6 @@ func (w *wizard) makeGenesis() {
 			EIP158Block:         big.NewInt(3),
 			ByzantiumBlock:      big.NewInt(4),
 			ConstantinopleBlock: big.NewInt(5),
-			NtfContractAddress:  common.HexToAddress("0xcafecafecafecafecafecafecafecafecafecafe"),
 		},
 	}
 	// Figure out which consensus engine to choose
@@ -116,10 +115,11 @@ func (w *wizard) makeGenesis() {
 		genesis.GasLimit = 42000000
 		genesis.Difficulty = big.NewInt(1)
 		genesis.Config.Dccs = &params.DccsConfig{
-			Period: 2,
-			Epoch:  30000,
-
-			ThangLongBlock: big.NewInt(0),
+			Period:   2,
+			Epoch:    30000,
+			Contract: common.HexToAddress("0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"),
+			// ThangLong hardfork
+			ThangLongBlock: common.Big0,
 			ThangLongEpoch: 3000,
 		}
 		fmt.Println()
@@ -166,9 +166,9 @@ func (w *wizard) makeGenesis() {
 		genesis.Config.Dccs.ThangLongEpoch = uint64(w.readDefaultInt(int(genesis.Config.Dccs.ThangLongEpoch)))
 
 		fmt.Println()
-		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", genesis.Config.NtfContractAddress.Hex())
+		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", genesis.Config.Dccs.Contract.Hex())
 		if address := w.readAddress(); address != nil {
-			genesis.Config.NtfContractAddress = *address
+			genesis.Config.Dccs.Contract = *address
 		}
 
 		// Generate a new random account and a funded simulator
@@ -196,7 +196,7 @@ func (w *wizard) makeGenesis() {
 			return true
 		}
 		sim.ForEachStorageAt(ctx, nextyAddress, nil, f)
-		genesis.Alloc[genesis.Config.NtfContractAddress] = core.GenesisAccount{
+		genesis.Alloc[genesis.Config.Dccs.Contract] = core.GenesisAccount{
 			Balance: big.NewInt(0),
 			Code:    code,
 			Storage: storage,
@@ -326,12 +326,12 @@ func (w *wizard) manageGenesis() {
 			fmt.Println()
 			fmt.Printf("Which block should ThangLong come into effect? (default = %v)\n", w.conf.Genesis.Config.Dccs.ThangLongBlock)
 			w.conf.Genesis.Config.Dccs.ThangLongBlock = w.readDefaultBigInt(w.conf.Genesis.Config.Dccs.ThangLongBlock)
-		}
 
-		fmt.Println()
-		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", w.conf.Genesis.Config.NtfContractAddress.Hex())
-		if address := w.readAddress(); address != nil {
-			w.conf.Genesis.Config.NtfContractAddress = *address
+			fmt.Println()
+			fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", w.conf.Genesis.Config.Dccs.Contract.Hex())
+			if address := w.readAddress(); address != nil {
+				w.conf.Genesis.Config.Dccs.Contract = *address
+			}
 		}
 
 		out, _ := json.MarshalIndent(w.conf.Genesis.Config, "", "  ")
