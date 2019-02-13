@@ -5,7 +5,8 @@
 #   git config --global core.excludesfile ~/.gitignore_global
 
 /tmp
-/data
+/data/**/gonex
+/data/**/history
 */**/*un~
 */**/*.test
 *un~
