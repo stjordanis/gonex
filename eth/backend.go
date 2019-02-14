@@ -115,6 +115,12 @@ func New(ctx *node.ServiceContext, config *Config) (*Ethereum, error) {
 		log.Warn("Sanitizing invalid miner gas price", "provided", config.MinerGasPrice, "updated", DefaultConfig.MinerGasPrice)
 		config.MinerGasPrice = new(big.Int).Set(DefaultConfig.MinerGasPrice)
 	}
+	if config.NoPruning && config.TrieDirtyCache > 0 {
+		config.TrieCleanCache += config.TrieDirtyCache
+		config.TrieDirtyCache = 0
+	}
+	log.Info("Allocated trie memory caches", "clean", common.StorageSize(config.TrieCleanCache)*1024*1024, "dirty", common.StorageSize(config.TrieDirtyCache)*1024*1024)
+
 	// Assemble the Ethereum object
 	chainDb, err := CreateDB(ctx, config, "chaindata")
 	if err != nil {
@@ -447,14 +453,14 @@ func (s *Ethereum) StartMining(threads int) error {
 			}
 			header := s.blockchain.CurrentHeader()
 			if s.chainConfig.IsThangLong(header.Number) {
-				size := state.GetCodeSize(s.chainConfig.NtfContractAddress)
+				size := state.GetCodeSize(s.chainConfig.Dccs.Contract)
 				log.Info("smart contract size", "size", size)
 				if size > 0 && state.Error() == nil {
 					// Get token holder from coinbase
 					index := common.BigToHash(big.NewInt(7)).String()[2:]
 					coinbase := "0x000000000000000000000000" + eb.String()[2:]
 					key := crypto.Keccak256Hash(hexutil.MustDecode(coinbase + index))
-					result := state.GetState(s.chainConfig.NtfContractAddress, key)
+					result := state.GetState(s.chainConfig.Dccs.Contract, key)
 
 					if (result == common.Hash{}) {
 						log.Error("Validator is not in activation sealer set")
