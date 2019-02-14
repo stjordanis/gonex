@@ -739,15 +739,13 @@ func (d *Dccs) verifySeal2(chain consensus.ChainReader, header *types.Header, pa
 	if err != nil {
 		return err
 	}
-	for _, h := range headers {
-		sig, err := ecrecover(h, d.signatures)
-		if err != nil {
-			return err
-		}
-		if signer == sig {
-			// Signer is among recents, only fail if the current block doesn't shift it out
-			return errUnauthorized
-		}
+	isRecent, err := d.IsRecent(&signer, headers)
+	if err != nil {
+		return err
+	}
+	if isRecent {
+		// Signer is among recents, only fail if the current block doesn't shift it out
+		return errUnauthorized
 	}
 
 	var parent *types.Header
@@ -1123,16 +1121,14 @@ func (d *Dccs) seal2(chain consensus.ChainReader, block *types.Block, results ch
 	if err != nil {
 		return err
 	}
-	for _, h := range headers {
-		sig, err := ecrecover(h, d.signatures)
-		if err != nil {
-			return err
-		}
-		if signer == sig {
-			// Signer is among recents
-			log.Info("Signed recently, must wait for others")
-			return nil
-		}
+	isRecent, err := d.IsRecent(&signer, headers)
+	if err != nil {
+		return err
+	}
+	if isRecent {
+		// Signer is among recents
+		log.Info("Signed recently, must wait for others")
+		return nil
 	}
 	var parent *types.Header
 	if len(headers) > 0 {
@@ -1329,4 +1325,18 @@ func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, hea
 		num, hash = num-1, h.ParentHash
 	}
 	return headers, nil
+}
+
+// IsRecent returns whether the signer is considered recent.
+func (d *Dccs) IsRecent(signer *common.Address, headers []*types.Header) (bool, error) {
+	for _, h := range headers {
+		sig, err := ecrecover(h, d.signatures)
+		if err != nil {
+			return false, err
+		}
+		if *signer == sig {
+			return true, nil
+		}
+	}
+	return false, nil
 }
