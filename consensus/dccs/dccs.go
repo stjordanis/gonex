@@ -735,7 +735,7 @@ func (d *Dccs) verifySeal2(chain consensus.ChainReader, header *types.Header, pa
 		return errUnauthorized
 	}
 
-	headers, err := d.GetRecentHeaders(snap, chain, header, parents)
+	headers, err := d.GetRecentHeaders(snap, chain, header, parents, len(snap.Signers)/2)
 	if err != nil {
 		return err
 	}
@@ -1119,7 +1119,7 @@ func (d *Dccs) seal2(chain consensus.ChainReader, block *types.Block, results ch
 		return errUnauthorized
 	}
 	// If we're amongst the recent signers, wait for the next block
-	headers, err := d.GetRecentHeaders(snap, chain, header, nil)
+	headers, err := d.GetRecentHeaders(snap, chain, header, nil, len(snap.Signers)/2)
 	if err != nil {
 		return err
 	}
@@ -1294,14 +1294,13 @@ func (d *Dccs) calculateRewards(chain consensus.ChainReader, state *state.StateD
 
 // GetRecentHeaders get some recent headers back from the current header.
 // Return empty header list at checkpoint, a.k.a reset the recent headers at every checkpoint.
-func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, header *types.Header, parents []*types.Header) ([]*types.Header, error) {
+func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, header *types.Header, parents []*types.Header, limit int) ([]*types.Header, error) {
 	var headers []*types.Header
 	number := header.Number.Uint64()
 	// Reset the recent headers at checkpoint to ensure the in-turn signer
 	if d.config.IsCheckpoint(number) {
 		return headers, nil
 	}
-	limit := len(snap.Signers) / 2
 	num, hash := number-1, header.ParentHash
 	for i := 1; i <= limit; i++ {
 		// shortcut for genesis block because it has no signature
