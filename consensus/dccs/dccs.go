@@ -735,7 +735,7 @@ func (d *Dccs) verifySeal2(chain consensus.ChainReader, header *types.Header, pa
 		return errUnauthorized
 	}
 
-	headers, err := d.GetRecentHeaders(snap, chain, header, parents, len(snap.Signers))
+	headers, err := d.GetRecentHeaders(snap, chain, header, parents, len(snap.Signers)*3/2)
 	if err != nil {
 		return err
 	}
@@ -1117,7 +1117,7 @@ func (d *Dccs) seal2(chain consensus.ChainReader, block *types.Block, results ch
 		return errUnauthorized
 	}
 	// If we're amongst the recent signers, wait for the next block
-	headers, err := d.GetRecentHeaders(snap, chain, header, nil, len(snap.Signers))
+	headers, err := d.GetRecentHeaders(snap, chain, header, nil, len(snap.Signers)*3/2)
 	if err != nil {
 		return err
 	}
@@ -1329,7 +1329,19 @@ func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, hea
 
 // IsRecent returns whether the signer is considered recent.
 func (d *Dccs) IsRecent(signer common.Address, headers []*types.Header, signersCount int) (bool, error) {
-	limit := len(headers) / 2
+	sigSet := make(map[common.Address]struct{}, len(headers))
+	for _, h := range headers {
+		sig, err := ecrecover(h, d.signatures)
+		if err != nil {
+			return false, err
+		}
+		if _, present := sigSet[sig]; present {
+			continue
+		}
+		sigSet[sig] = struct{}{}
+	}
+
+	limit := len(sigSet) / 2
 	if limit == 0 {
 		return false, nil
 	}
