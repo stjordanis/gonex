@@ -1329,7 +1329,7 @@ func (d *Dccs) GetRecentHeaders(snap *Snapshot, chain consensus.ChainReader, hea
 
 // IsRecent returns whether the signer is considered recent.
 func (d *Dccs) IsRecent(signer common.Address, headers []*types.Header, signersCount int) (bool, error) {
-	limit := signersCount / 2
+	limit := len(headers) / 2
 	if limit == 0 {
 		return false, nil
 	}
