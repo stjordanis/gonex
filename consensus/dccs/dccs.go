@@ -907,7 +907,7 @@ func generateConsensusContract(signers []common.Address) (code []byte, storage m
 	auth := bind.NewKeyedTransactor(prvKey)
 	auth.GasLimit = 12344321
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: new(big.Int).Lsh(big.NewInt(1), 256-7)}}, auth.GasLimit)
-	address, _, _, err := contract.DeployNexty(auth, sim, signers)
+	address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
 	if err != nil {
 		fmt.Println("Can't deploy nexty governance smart contract")
 	}

@@ -30,14 +30,14 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/log"
-	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
-	"github.com/ethereum/go-ethereum/contracts/nexty/contract"
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/contracts/nexty/token"
+	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/log"
+	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
 )
 
@@ -184,7 +184,7 @@ func (w *wizard) makeGenesis() {
 		auth := bind.NewKeyedTransactor(prvKey)
 		auth.GasLimit = 12344321
 		sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: new(big.Int).Lsh(big.NewInt(1), 256-7)}}, auth.GasLimit)
-		address, _, _, err := contract.DeployNtfToken(auth, sim, *onwer)
+		address, _, _, err := token.DeployNtfToken(auth, sim, *onwer)
 		if err != nil {
 			fmt.Println("Can't deploy nexty foundation token smart contract")
 		}
@@ -203,12 +203,11 @@ func (w *wizard) makeGenesis() {
 			return true
 		}
 		sim.ForEachStorageAt(ctx, address, nil, f)
-		genesis.Alloc[common.HexToAddress("0x2c783ad80ff980ec75468477e3dd9f86123ecbda")] = core.GenesisAccount{
+		genesis.Alloc[params.TokenAddress] = core.GenesisAccount{
 			Balance: big.NewInt(0),
 			Code:    code,
 			Storage: storage,
 		}
-
 
 	default:
 		log.Crit("Invalid consensus engine choice", "choice", choice)
