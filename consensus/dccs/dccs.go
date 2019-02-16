@@ -901,13 +901,13 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	return nil
 }
 
-func generateConsensusContract(signers []common.Address) (code []byte, storage map[common.Hash]common.Hash, err error) {
+func GenerateConsensusContract(deployCallback func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error)) (code []byte, storage map[common.Hash]common.Hash, err error) {
 	// Generate a new random account and a funded simulator
 	prvKey, _ := crypto.GenerateKey()
 	auth := bind.NewKeyedTransactor(prvKey)
 	auth.GasLimit = 12344321
 	sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: new(big.Int).Lsh(big.NewInt(1), 256-7)}}, auth.GasLimit)
-	address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
+	address, err := deployCallback(sim, auth)
 	if err != nil {
 		fmt.Println("Can't deploy nexty governance smart contract")
 	}
@@ -940,7 +940,10 @@ func deployConsensusContract(state *state.StateDB, chainConfig *params.ChainConf
 	}
 
 	// Generate contract code and data using a simulated backend
-	code, storage, err := generateConsensusContract(signers)
+	code, storage, err := GenerateConsensusContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+		address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
+		return address, err
+	})
 	if err != nil {
 		return err
 	}

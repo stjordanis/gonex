@@ -18,7 +18,6 @@ package main
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,9 +32,9 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/consensus/dccs"
 	"github.com/ethereum/go-ethereum/contracts/nexty/token"
 	"github.com/ethereum/go-ethereum/core"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
 	"github.com/ethereum/go-ethereum/rlp"
@@ -180,29 +179,24 @@ func (w *wizard) makeGenesis() {
 				onwer = address
 			}
 		}
-		prvKey, _ := crypto.GenerateKey()
-		auth := bind.NewKeyedTransactor(prvKey)
-		auth.GasLimit = 12344321
-		sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: new(big.Int).Lsh(big.NewInt(1), 256-7)}}, auth.GasLimit)
-		address, _, _, err := token.DeployNtfToken(auth, sim, *onwer)
+
+		code, storage, err := dccs.GenerateConsensusContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+			address, _, _, err := token.DeployNtfToken(auth, sim, *onwer)
+			return address, err
+		})
 		if err != nil {
 			fmt.Println("Can't deploy nexty foundation token smart contract")
+			return
 		}
-		sim.Commit()
 
-		ctx, cancel := context.WithCancel(context.Background())
-		defer cancel()
-		code, _ := sim.CodeAt(ctx, address, nil)
-		storage := make(map[common.Hash]common.Hash)
-		f := func(key, val common.Hash) bool {
+		// Pre-process the storage map for genesis json
+		for key, val := range storage {
 			decode := []byte{}
 			trim := bytes.TrimLeft(val.Bytes(), "\x00")
 			rlp.DecodeBytes(trim, &decode)
 			storage[key] = common.BytesToHash(decode)
-			log.Info("DecodeBytes", "value", val.String(), "decode", storage[key].String())
-			return true
 		}
-		sim.ForEachStorageAt(ctx, address, nil, f)
+
 		genesis.Alloc[params.TokenAddress] = core.GenesisAccount{
 			Balance: big.NewInt(0),
 			Code:    code,
