@@ -17,3 +17,4 @@
 package nexty
 
 //go:generate ../../build/bin/abigen --sol contract/nexty.sol --pkg contract --out contract/nexty.go
+//go:generate ../../build/bin/abigen --sol token/token.sol --pkg token --out token/token.go
