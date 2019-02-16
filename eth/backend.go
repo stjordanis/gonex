@@ -457,7 +457,7 @@ func (s *Ethereum) StartMining(threads int) error {
 				log.Info("smart contract size", "size", size)
 				if size > 0 && state.Error() == nil {
 					// Get token holder from coinbase
-					index := common.BigToHash(big.NewInt(7)).String()[2:]
+					index := common.BigToHash(big.NewInt(4)).String()[2:]
 					coinbase := "0x000000000000000000000000" + eb.String()[2:]
 					key := crypto.Keccak256Hash(hexutil.MustDecode(coinbase + index))
 					result := state.GetState(s.chainConfig.Dccs.Contract, key)

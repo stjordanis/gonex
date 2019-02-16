@@ -615,7 +615,7 @@ func (d *Dccs) snapshot2(chain consensus.ChainReader, number uint64, hash common
 			}
 			size := state.GetCodeSize(chain.Config().Dccs.Contract)
 			if size > 0 && state.Error() == nil {
-				var num int64 = 5 // signers array position in the smart contract state
+				var num int64 = 2 // signers array position in the smart contract state
 				index := common.BigToHash(big.NewInt(num))
 				result := state.GetState(chain.Config().Dccs.Contract, index)
 				var length int64
@@ -853,7 +853,7 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	checkpoint := chain.GetHeaderByNumber(cp)
 	if checkpoint != nil {
 		root, _ := chain.StateAt(checkpoint.Root)
-		index := common.BigToHash(big.NewInt(7)).String()[2:]
+		index := common.BigToHash(big.NewInt(4)).String()[2:]
 		coinbase := "0x000000000000000000000000" + header.Coinbase.String()[2:]
 		key := crypto.Keccak256Hash(hexutil.MustDecode(coinbase + index))
 		result := root.GetState(chain.Config().Dccs.Contract, key)
