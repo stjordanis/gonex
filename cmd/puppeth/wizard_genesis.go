@@ -18,6 +18,7 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,6 +34,11 @@ import (
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
+	"github.com/ethereum/go-ethereum/contracts/nexty/contract"
+	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // makeGenesis creates a new genesis struct based on some user input.
@@ -164,6 +170,45 @@ func (w *wizard) makeGenesis() {
 		if address := w.readAddress(); address != nil {
 			genesis.Config.Dccs.Contract = *address
 		}
+
+		// Generate nexty token foundation contract
+		fmt.Println()
+		fmt.Println("Which account is allowed to be the onwer of NTF token contract? (mandatory)")
+		var onwer *common.Address
+		for onwer == nil {
+			if address := w.readAddress(); address != nil {
+				onwer = address
+			}
+		}
+		prvKey, _ := crypto.GenerateKey()
+		auth := bind.NewKeyedTransactor(prvKey)
+		auth.GasLimit = 12344321
+		sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: new(big.Int).Lsh(big.NewInt(1), 256-7)}}, auth.GasLimit)
+		address, _, _, err := contract.DeployNtfToken(auth, sim, *onwer)
+		if err != nil {
+			fmt.Println("Can't deploy nexty foundation token smart contract")
+		}
+		sim.Commit()
+
+		ctx, cancel := context.WithCancel(context.Background())
+		defer cancel()
+		code, _ := sim.CodeAt(ctx, address, nil)
+		storage := make(map[common.Hash]common.Hash)
+		f := func(key, val common.Hash) bool {
+			decode := []byte{}
+			trim := bytes.TrimLeft(val.Bytes(), "\x00")
+			rlp.DecodeBytes(trim, &decode)
+			storage[key] = common.BytesToHash(decode)
+			log.Info("DecodeBytes", "value", val.String(), "decode", storage[key].String())
+			return true
+		}
+		sim.ForEachStorageAt(ctx, address, nil, f)
+		genesis.Alloc[common.HexToAddress("0x2c783ad80ff980ec75468477e3dd9f86123ecbda")] = core.GenesisAccount{
+			Balance: big.NewInt(0),
+			Code:    code,
+			Storage: storage,
+		}
+
 
 	default:
 		log.Crit("Invalid consensus engine choice", "choice", choice)
