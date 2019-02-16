@@ -8,6 +8,7 @@
     "eip158Block": 3,
     "byzantiumBlock": 4,
     "constantinopleBlock": 120,
+    "petersburgBlock": 120,
     "dccs": {
       "period": 2,
       "epoch": 60,
