@@ -19,7 +19,6 @@ package dccs
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -32,11 +31,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/deployer"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/contracts/nexty/contract"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -901,30 +900,6 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	return nil
 }
 
-func GenerateConsensusContract(deployCallback func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error)) (code []byte, storage map[common.Hash]common.Hash, err error) {
-	// Generate a new random account and a funded simulator
-	prvKey, _ := crypto.GenerateKey()
-	auth := bind.NewKeyedTransactor(prvKey)
-	auth.GasLimit = 12344321
-	sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: new(big.Int).Lsh(big.NewInt(1), 256-7)}}, auth.GasLimit)
-	address, err := deployCallback(sim, auth)
-	if err != nil {
-		fmt.Println("Can't deploy nexty governance smart contract")
-	}
-	sim.Commit()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	code, _ = sim.CodeAt(ctx, address, nil)
-	storage = make(map[common.Hash]common.Hash)
-	sim.ForEachStorageAt(ctx, address, nil, func(key, val common.Hash) bool {
-		storage[key] = val
-		log.Info("DecodeBytes", "key", key, "value", storage[key])
-		return true
-	})
-	return code, storage, err
-}
-
 // deployConsensusContract deploys the consensus contract without any owner
 func deployConsensusContract(state *state.StateDB, chainConfig *params.ChainConfig, signers []common.Address) error {
 	address := chainConfig.Dccs.Contract
@@ -940,7 +915,7 @@ func deployConsensusContract(state *state.StateDB, chainConfig *params.ChainConf
 	}
 
 	// Generate contract code and data using a simulated backend
-	code, storage, err := GenerateConsensusContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+	code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
 		address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
 		return address, err
 	})

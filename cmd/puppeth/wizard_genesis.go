@@ -32,7 +32,7 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/consensus/dccs"
+	"github.com/ethereum/go-ethereum/common/deployer"
 	"github.com/ethereum/go-ethereum/contracts/nexty/token"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/log"
@@ -180,7 +180,7 @@ func (w *wizard) makeGenesis() {
 			}
 		}
 
-		code, storage, err := dccs.GenerateConsensusContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+		code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
 			address, _, _, err := token.DeployNtfToken(auth, sim, *onwer)
 			return address, err
 		})
