@@ -19,7 +19,6 @@ package dccs
 
 import (
 	"bytes"
-	"context"
 	"errors"
 	"fmt"
 	"math"
@@ -32,11 +31,11 @@ import (
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/deployer"
 	"github.com/ethereum/go-ethereum/common/hexutil"
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/contracts/nexty/contract"
-	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -616,7 +615,7 @@ func (d *Dccs) snapshot2(chain consensus.ChainReader, number uint64, hash common
 			}
 			size := state.GetCodeSize(chain.Config().Dccs.Contract)
 			if size > 0 && state.Error() == nil {
-				var num int64 = 5 // signers array position in the smart contract state
+				var num int64 = 2 // signers array position in the smart contract state
 				index := common.BigToHash(big.NewInt(num))
 				result := state.GetState(chain.Config().Dccs.Contract, index)
 				var length int64
@@ -854,7 +853,7 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	checkpoint := chain.GetHeaderByNumber(cp)
 	if checkpoint != nil {
 		root, _ := chain.StateAt(checkpoint.Root)
-		index := common.BigToHash(big.NewInt(7)).String()[2:]
+		index := common.BigToHash(big.NewInt(4)).String()[2:]
 		coinbase := "0x000000000000000000000000" + header.Coinbase.String()[2:]
 		key := crypto.Keccak256Hash(hexutil.MustDecode(coinbase + index))
 		result := root.GetState(chain.Config().Dccs.Contract, key)
@@ -901,30 +900,6 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	return nil
 }
 
-func generateConsensusContract(signers []common.Address) (code []byte, storage map[common.Hash]common.Hash, err error) {
-	// Generate a new random account and a funded simulator
-	prvKey, _ := crypto.GenerateKey()
-	auth := bind.NewKeyedTransactor(prvKey)
-	auth.GasLimit = 12344321
-	sim := backends.NewSimulatedBackend(core.GenesisAlloc{auth.From: {Balance: new(big.Int).Lsh(big.NewInt(1), 256-7)}}, auth.GasLimit)
-	address, _, _, err := contract.DeployNexty(auth, sim, signers)
-	if err != nil {
-		fmt.Println("Can't deploy nexty governance smart contract")
-	}
-	sim.Commit()
-
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-	code, _ = sim.CodeAt(ctx, address, nil)
-	storage = make(map[common.Hash]common.Hash)
-	sim.ForEachStorageAt(ctx, address, nil, func(key, val common.Hash) bool {
-		storage[key] = val
-		log.Info("DecodeBytes", "key", key, "value", storage[key])
-		return true
-	})
-	return code, storage, err
-}
-
 // deployConsensusContract deploys the consensus contract without any owner
 func deployConsensusContract(state *state.StateDB, chainConfig *params.ChainConfig, signers []common.Address) error {
 	address := chainConfig.Dccs.Contract
@@ -940,7 +915,10 @@ func deployConsensusContract(state *state.StateDB, chainConfig *params.ChainConf
 	}
 
 	// Generate contract code and data using a simulated backend
-	code, storage, err := generateConsensusContract(signers)
+	code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+		address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
+		return address, err
+	})
 	if err != nil {
 		return err
 	}

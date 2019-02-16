@@ -29,10 +29,15 @@ import (
 	"path/filepath"
 	"time"
 
+	"github.com/ethereum/go-ethereum/accounts/abi/bind"
+	"github.com/ethereum/go-ethereum/accounts/abi/bind/backends"
 	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/common/deployer"
+	"github.com/ethereum/go-ethereum/contracts/nexty/token"
 	"github.com/ethereum/go-ethereum/core"
 	"github.com/ethereum/go-ethereum/log"
 	"github.com/ethereum/go-ethereum/params"
+	"github.com/ethereum/go-ethereum/rlp"
 )
 
 // makeGenesis creates a new genesis struct based on some user input.
@@ -50,6 +55,7 @@ func (w *wizard) makeGenesis() {
 			EIP158Block:         big.NewInt(3),
 			ByzantiumBlock:      big.NewInt(4),
 			ConstantinopleBlock: big.NewInt(5),
+			PetersburgBlock:     big.NewInt(5),
 		},
 	}
 	// Figure out which consensus engine to choose
@@ -163,6 +169,39 @@ func (w *wizard) makeGenesis() {
 		fmt.Printf("Which nexty governance smart contract address? (default = %v)\n", genesis.Config.Dccs.Contract.Hex())
 		if address := w.readAddress(); address != nil {
 			genesis.Config.Dccs.Contract = *address
+		}
+
+		// Generate nexty token foundation contract
+		fmt.Println()
+		fmt.Println("Which account is allowed to be the onwer of NTF token contract? (mandatory)")
+		var onwer *common.Address
+		for onwer == nil {
+			if address := w.readAddress(); address != nil {
+				onwer = address
+			}
+		}
+
+		code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+			address, _, _, err := token.DeployNtfToken(auth, sim, *onwer)
+			return address, err
+		})
+		if err != nil {
+			fmt.Println("Can't deploy nexty foundation token smart contract")
+			return
+		}
+
+		// Pre-process the storage map for genesis json
+		for key, val := range storage {
+			decode := []byte{}
+			trim := bytes.TrimLeft(val.Bytes(), "\x00")
+			rlp.DecodeBytes(trim, &decode)
+			storage[key] = common.BytesToHash(decode)
+		}
+
+		genesis.Alloc[params.TokenAddress] = core.GenesisAccount{
+			Balance: big.NewInt(0),
+			Code:    code,
+			Storage: storage,
 		}
 
 	default:
