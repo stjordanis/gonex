@@ -26,7 +26,7 @@ import (
 // Genesis hashes to enforce below configs on.
 var (
 	MainnetGenesisHash = common.HexToHash("0xdca76d5b4994c4e6bc9fe927424a2bed4c3045bd3316b9c72e77247c69eb425b")
-	TestnetGenesisHash = common.HexToHash("0x004803b4cef4470352041a5da08440b8a280b3b9696be3430c2de831de4233d5")
+	TestnetGenesisHash = common.HexToHash("0xe53f0441b5f887499e49cb628262c4acc897492a4fe3236bb3c68023ea725f0d")
 	RinkebyGenesisHash = common.HexToHash("0x6341fd3daf94b748c72ced5a5b26028f2474f5f00d824504e4fa37a75767e177")
 	BurnAddress        = common.HexToAddress("0x0000000000000000000000000000000000000000")
 	TokenAddress       = common.HexToAddress("0x2c783ad80ff980ec75468477e3dd9f86123ecbda") // NTF token contract address
@@ -77,16 +77,16 @@ var (
 		EIP155Block:         big.NewInt(3),
 		EIP158Block:         big.NewInt(3),
 		ByzantiumBlock:      big.NewInt(4),
-		ConstantinopleBlock: big.NewInt(5),
-		PetersburgBlock:     big.NewInt(5),
+		ConstantinopleBlock: nil,
+		PetersburgBlock:     nil,
 		Dccs: &DccsConfig{
 			Period: 2,
-			Epoch:  600,
+			Epoch:  30000,
 			// Governance contract
 			Contract: common.HexToAddress("0xcafecafecafecafecafecafecafecafecafecafe"),
 			// ThangLong hard-fork
-			ThangLongBlock: big.NewInt(0),
-			ThangLongEpoch: 600,
+			ThangLongBlock: nil,
+			ThangLongEpoch: 3000,
 		},
 	}
 
@@ -352,12 +352,15 @@ func (c *ChainConfig) IsEWASM(num *big.Int) bool {
 
 // IsThangLongPreparationBlock returns whether num represents a block number exactly at the ThangLong Preparation
 func (c *ChainConfig) IsThangLongPreparationBlock(num *big.Int) bool {
-	return c.Dccs != nil && c.Dccs.IsThangLongPreparationBlock(num)
+	return c.Dccs != nil && c.Dccs.ThangLongBlock != nil && c.Dccs.IsThangLongPreparationBlock(num)
 }
 
 // IsThangLongPreparationBlock returns whether num represents a block number exactly at the ThangLong Preparation
 // ThangLong preparation block is hard-coded to 32 blocks before the ThangLong hard-fork
 func (c *DccsConfig) IsThangLongPreparationBlock(num *big.Int) bool {
+	if c.ThangLongBlock == nil {
+		return false
+	}
 	preparationBlock := big.NewInt(1)
 	if c.ThangLongBlock.Cmp(common.Big32) > 0 {
 		preparationBlock = preparationBlock.Sub(c.ThangLongBlock, common.Big32)
