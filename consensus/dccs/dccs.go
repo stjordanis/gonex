@@ -36,6 +36,7 @@ import (
 	"github.com/ethereum/go-ethereum/consensus"
 	"github.com/ethereum/go-ethereum/consensus/misc"
 	"github.com/ethereum/go-ethereum/contracts/nexty/contract"
+	"github.com/ethereum/go-ethereum/contracts/nexty/token"
 	"github.com/ethereum/go-ethereum/core/state"
 	"github.com/ethereum/go-ethereum/core/types"
 	"github.com/ethereum/go-ethereum/core/vm"
@@ -900,27 +901,19 @@ func (d *Dccs) prepare2(chain consensus.ChainReader, header *types.Header) error
 	return nil
 }
 
-// deployConsensusContract deploys the consensus contract without any owner
-func deployConsensusContract(state *state.StateDB, chainConfig *params.ChainConfig, signers []common.Address) error {
-	address := chainConfig.Dccs.Contract
+func deployContract(state *state.StateDB, address common.Address, code []byte, storage map[common.Hash]common.Hash, overwrite bool) {
 	// Ensure there's no existing contract already at the designated address
 	contractHash := state.GetCodeHash(address)
 	// this is an consensus upgrade
-	upgrade := state.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != vm.EmptyCodeHash)
-	if !upgrade {
+	exist := state.GetNonce(address) != 0 || (contractHash != (common.Hash{}) && contractHash != vm.EmptyCodeHash)
+	if !exist {
 		// Create a new account on the state
 		state.CreateAccount(address)
 		// Assuming chainConfig.IsEIP158(BlockNumber)
 		state.SetNonce(address, 1)
-	}
-
-	// Generate contract code and data using a simulated backend
-	code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
-		address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
-		return address, err
-	})
-	if err != nil {
-		return err
+	} else if !overwrite {
+		// disable overwrite flag to prevent unintentional contract upgrade
+		return
 	}
 
 	// Transfer the code and state from simulated backend to the real state db
@@ -929,6 +922,39 @@ func deployConsensusContract(state *state.StateDB, chainConfig *params.ChainConf
 		state.SetState(address, key, value)
 	}
 	state.Commit(true)
+}
+
+// deployConsensusContracts deploys the consensus contract without any owner
+func deployConsensusContracts(state *state.StateDB, chainConfig *params.ChainConfig, signers []common.Address) error {
+	// Deploy NTF ERC20 Token Contract
+	{
+		// Generate contract code and data using a simulated backend
+		code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+			owner := common.HexToAddress("0x000000270840d8ebdffc7d162193cc5ba1ad8707")
+			address, _, _, err := token.DeployNtfToken(auth, sim, owner)
+			return address, err
+		})
+		if err != nil {
+			return err
+		}
+		// Deploy only, no upgrade
+		deployContract(state, params.TokenAddress, code, storage, false)
+	}
+
+	// Deploy Nexty Governance Contract
+	{
+		// Generate contract code and data using a simulated backend
+		code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
+			address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
+			return address, err
+		})
+		if err != nil {
+			return err
+		}
+		// Deploy or update
+		deployContract(state, chainConfig.Dccs.Contract, code, storage, true)
+	}
+
 	return nil
 }
 
@@ -952,7 +978,7 @@ func (d *Dccs) finalize(chain consensus.ChainReader, header *types.Header, state
 		}
 		sigs := s.signers()
 		// Deploy the contract and ininitalize it with pre-fork signers
-		if deployConsensusContract(state, chain.Config(), sigs) != nil {
+		if deployConsensusContracts(state, chain.Config(), sigs) != nil {
 			return nil, errors.New("Unable to deploy Nexty governance smart contract")
 		}
 		log.Info("Successfully deploy Nexty governance contract", "Number of sealers", len(sigs))
