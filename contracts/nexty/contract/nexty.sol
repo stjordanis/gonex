@@ -186,6 +186,8 @@ contract NextyGovernance {
             coinbases.push(_sealers[i]);
             isCoinbase[_sealers[i]] = true;
             getSealer[_sealers[i]] = _sealers[i];
+            sealers[_sealers[i]].coinbase = _sealers[i];
+            sealers[_sealers[i]].status = SealerStatus.ACTIVE;    
         }        
     }
 
