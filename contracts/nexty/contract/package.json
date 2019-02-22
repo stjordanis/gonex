@@ -1,0 +1,19 @@
+{
+  "name": "nexty",
+  "version": "1.0.0",
+  "description": "Nexty Consensus Contract",
+  "scripts": {
+    "compile": "solc nexty.sol",
+    "build": "../../../build/bin/abigen -sol=nexty.sol --pkg=contract -out=nexty.go",
+    "parser": "babel-eslint",
+    "pretest": "eslint --ignore-path .gitignore .",
+    "lint": "eslint ./**.js **.js",
+    "travislint": "eslint --ignore-path .gitignore .",
+    "lint:fix": "eslint . --fix",
+    "lint:sol": "solium -d contracts/"
+  },
+  "author": "zergity@gmail.com",
+  "dependencies": {
+    "openzeppelin-solidity": "^2.1.2"
+  }
+}
