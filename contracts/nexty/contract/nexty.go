@@ -614,18 +614,18 @@ func (_IERC20 *IERC20Filterer) WatchTransfer(opts *bind.WatchOpts, sink chan<- *
 }
 
 // NextyGovernanceABI is the input ABI used to generate the binding from.
-const NextyGovernanceABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"isWithdrawable\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getCoinbase\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"isCoinbase\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"coinbases\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"getSealer\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_coinbase\",\"type\":\"address\"}],\"name\":\"join\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getStatus\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"withdraw\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"LOCK_DURATION\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"isBanned\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"sealers\",\"outputs\":[{\"name\":\"status\",\"type\":\"uint8\"},{\"name\":\"balance\",\"type\":\"uint256\"},{\"name\":\"coinbase\",\"type\":\"address\"},{\"name\":\"unlockTime\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"MIN_NTF_AMOUNT\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"leave\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getUnlockTime\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_token\",\"type\":\"address\"},{\"name\":\"_sealers\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_coinbase\",\"type\":\"address\"}],\"name\":\"Joined\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_coinbase\",\"type\":\"address\"}],\"name\":\"Left\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"Withdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"}],\"name\":\"Banned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"}],\"name\":\"Unbanned\",\"type\":\"event\"}]"
+const NextyGovernanceABI = "[{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"isWithdrawable\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getCoinbase\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"name\":\"signers\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_signer\",\"type\":\"address\"}],\"name\":\"join\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getStatus\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"withdraw\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getUnlockHeight\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"account\",\"outputs\":[{\"name\":\"status\",\"type\":\"uint8\"},{\"name\":\"balance\",\"type\":\"uint256\"},{\"name\":\"signer\",\"type\":\"address\"},{\"name\":\"unlockHeight\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"\",\"type\":\"address\"}],\"name\":\"signerCoinbase\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"isBanned\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"stakeLockHeight\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[{\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"deposit\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"stakeRequire\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":false,\"inputs\":[],\"name\":\"leave\",\"outputs\":[{\"name\":\"\",\"type\":\"bool\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[{\"name\":\"_address\",\"type\":\"address\"}],\"name\":\"getBalance\",\"outputs\":[{\"name\":\"\",\"type\":\"uint256\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"constant\":true,\"inputs\":[],\"name\":\"token\",\"outputs\":[{\"name\":\"\",\"type\":\"address\"}],\"payable\":false,\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"name\":\"_token\",\"type\":\"address\"},{\"name\":\"_stakeRequire\",\"type\":\"uint256\"},{\"name\":\"_stakeLockHeight\",\"type\":\"uint256\"},{\"name\":\"_signers\",\"type\":\"address[]\"}],\"payable\":false,\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"Deposited\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_signer\",\"type\":\"address\"}],\"name\":\"Joined\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_signer\",\"type\":\"address\"}],\"name\":\"Left\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"},{\"indexed\":false,\"name\":\"_amount\",\"type\":\"uint256\"}],\"name\":\"Withdrawn\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"}],\"name\":\"Banned\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"name\":\"_sealer\",\"type\":\"address\"}],\"name\":\"Unbanned\",\"type\":\"event\"}]"
 
 // NextyGovernanceBin is the compiled bytecode used for deploying new contracts.
-const NextyGovernanceBin = `0x60806040523480156200001157600080fd5b506040516200132838038062001328833981018060405260408110156200003757600080fd5b8151602083018051919392830192916401000000008111156200005957600080fd5b820160208101848111156200006d57600080fd5b81518560208202830111640100000000821117156200008b57600080fd5b505060008054600160a060020a031916600160a060020a0387161781559093509150505b81518110156200029b5760028282815181101515620000ca57fe5b6020908102919091018101518254600180820185556000948552928420018054600160a060020a031916600160a060020a03909216919091179055835190916003918590859081106200011957fe5b602090810291909101810151600160a060020a03168252810191909152604001600020805460ff191691151591909117905581518290829081106200015a57fe5b906020019060200201516004600084848151811015156200017757fe5b90602001906020020151600160a060020a0316600160a060020a0316815260200190815260200160002060006101000a815481600160a060020a030219169083600160a060020a031602179055508181815181101515620001d457fe5b90602001906020020151600160008484815181101515620001f157fe5b90602001906020020151600160a060020a0316600160a060020a0316815260200190815260200160002060020160006101000a815481600160a060020a030219169083600160a060020a03160217905550600180600084848151811015156200025657fe5b6020908102909101810151600160a060020a03168252810191909152604001600020805460ff191660018360048111156200028d57fe5b0217905550600101620000af565b50505061107a80620002ae6000396000f3fe608060405234801561001057600080fd5b5060043610610128576000357c010000000000000000000000000000000000000000000000000000000090048063485d3834116100bf578063b6b55f251161008e578063b6b55f251461031f578063d66d9e191461033c578063dbed1e8814610344578063f8b2cb4f1461036a578063fc0c546a1461039057610128565b8063485d38341461027857806397f735d514610280578063aa61aef3146102a6578063b22ff4541461031757610128565b80632041d33f116100fb5780632041d33f146101ec57806328ffe6c81461021257806330ccebb5146102385780633ccfd60b1461027057610128565b806302a184841461012d5780630a9a3f07146101675780630d8754ac146101a95780630ebf0de7146101cf575b600080fd5b6101536004803603602081101561014357600080fd5b5035600160a060020a0316610398565b604080519115158252519081900360200190f35b61018d6004803603602081101561017d57600080fd5b5035600160a060020a0316610426565b60408051600160a060020a039092168252519081900360200190f35b610153600480360360208110156101bf57600080fd5b5035600160a060020a0316610447565b61018d600480360360208110156101e557600080fd5b503561045c565b61018d6004803603602081101561020257600080fd5b5035600160a060020a0316610484565b6101536004803603602081101561022857600080fd5b5035600160a060020a031661049f565b61025e6004803603602081101561024e57600080fd5b5035600160a060020a0316610861565b60408051918252519081900360200190f35b610153610886565b61025e610a60565b6101536004803603602081101561029657600080fd5b5035600160a060020a0316610a66565b6102cc600480360360208110156102bc57600080fd5b5035600160a060020a0316610a98565b604051808560048111156102dc57fe5b60ff16815260200184815260200183600160a060020a0316600160a060020a0316815260200182815260200194505050505060405180910390f35b61025e610acf565b6101536004803603602081101561033557600080fd5b5035610ad4565b610153610bf1565b61025e6004803603602081101561035a57600080fd5b5035600160a060020a0316610dc9565b61025e6004803603602081101561038057600080fd5b5035600160a060020a0316610de7565b61018d610e06565b60006001600160a060020a03831660009081526001602052604090205460ff1660048111156103c357fe5b141580156103f857506004600160a060020a03831660009081526001602052604090205460ff1660048111156103f557fe5b14155b801561041e5750600160a060020a03821660009081526001602052604090206003015442115b90505b919050565b600160a060020a039081166000908152600160205260409020600201541690565b60036020526000908152604090205460ff1681565b600280548290811061046a57fe5b600091825260209091200154600160a060020a0316905081565b600460205260009081526040902054600160a060020a031681565b600060043360009081526001602052604090205460ff1660048111156104c157fe5b1415610517576040805160e560020a62461bcd02815260206004820152600760248201527f62616e6e65642000000000000000000000000000000000000000000000000000604482015290519081900360640190fd5b60013360009081526001602052604090205460ff16600481111561053757fe5b141561058d576040805160e560020a62461bcd02815260206004820152600f60248201527f616c7265616479206a6f696e6564200000000000000000000000000000000000604482015290519081900360640190fd5b3360009081526001602081905260409091200154606411156105f9576040805160e560020a62461bcd02815260206004820152600e60248201527f6e6f7420656e6f756768206e7466000000000000000000000000000000000000604482015290519081900360640190fd5b600160a060020a038216600090815260036020526040902054829060ff161561066c576040805160e560020a62461bcd02815260206004820152601560248201527f636f696e6261736520616c726561647920757365640000000000000000000000604482015290519081900360640190fd5b600160a060020a03811615156106cc576040805160e560020a62461bcd02815260206004820152600d60248201527f636f696e62617365207a65726f00000000000000000000000000000000000000604482015290519081900360640190fd5b600160a060020a03811630141561072d576040805160e560020a62461bcd02815260206004820152601760248201527f73616d6520636f6e747261637427732061646472657373000000000000000000604482015290519081900360640190fd5b600160a060020a03811633141561078e576040805160e560020a62461bcd02815260206004820152601560248201527f73616d652073656e646572277320616464726573730000000000000000000000604482015290519081900360640190fd5b33600090815260016020819052604090912060028101805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a038716179055805460ff191682800217905550600160a060020a0383166000908152600460205260409020805473ffffffffffffffffffffffffffffffffffffffff19163317905561081583610e15565b60408051338152600160a060020a038516602082015281517f7702dccda75540ad1dca8d5276c048f4a5c0e4203f6da4be214bfb1901b203ea929181900390910190a150600192915050565b600160a060020a03811660009081526001602052604081205461041e9060ff16610e88565b600060043360009081526001602052604090205460ff1660048111156108a857fe5b14156108fe576040805160e560020a62461bcd02815260206004820152600760248201527f62616e6e65642000000000000000000000000000000000000000000000000000604482015290519081900360640190fd5b61090733610398565b151561095d576040805160e560020a62461bcd02815260206004820181905260248201527f756e61626c6520746f20776974686472617720617420746865206d6f6d656e74604482015290519081900360640190fd5b336000818152600160208181526040808420928301805490859055835460ff1916600317909355835481517fa9059cbb00000000000000000000000000000000000000000000000000000000815260048101969096526024860184905290519294600160a060020a039091169363a9059cbb93604480840194939192918390030190829087803b1580156109f057600080fd5b505af1158015610a04573d6000803e3d6000fd5b505050506040513d6020811015610a1a57600080fd5b5050604080513381526020810183905281517f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d5929181900390910190a160019150505b90565b61012c81565b60006004600160a060020a03831660009081526001602052604090205460ff166004811115610a9157fe5b1492915050565b6001602081905260009182526040909120805491810154600282015460039092015460ff909316929091600160a060020a03169084565b606481565b60008054604080517f23b872dd000000000000000000000000000000000000000000000000000000008152336004820152306024820152604481018590529051600160a060020a03909216916323b872dd9160648082019260209290919082900301818787803b158015610b4757600080fd5b505af1158015610b5b573d6000803e3d6000fd5b505050506040513d6020811015610b7157600080fd5b50503360009081526001602081905260409091200154610b97908363ffffffff610f0116565b3360008181526001602081815260409283902090910193909355805191825291810184905281517f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c4929181900390910190a1506001919050565b600060043360009081526001602052604090205460ff166004811115610c1357fe5b1415610c69576040805160e560020a62461bcd02815260206004820152600760248201527f62616e6e65642000000000000000000000000000000000000000000000000000604482015290519081900360640190fd5b60013360009081526001602052604090205460ff166004811115610c8957fe5b14610cde576040805160e560020a62461bcd02815260206004820152600b60248201527f6e6f74206a6f696e656420000000000000000000000000000000000000000000604482015290519081900360640190fd5b3360009081526001602052604090206002808201805473ffffffffffffffffffffffffffffffffffffffff198116909155825460ff1916909117909155600160a060020a0316610d3061012c42610f01565b33600090815260016020908152604080832060030193909355600160a060020a03841682526004905220805473ffffffffffffffffffffffffffffffffffffffff19169055610d7e81610f1a565b60408051338152600160a060020a038316602082015281517f4b9ee4dd061ba088b22898a02491f3896a4a580c6cda8783ca579ee159f8e8c5929181900390910190a1600191505090565b600160a060020a031660009081526001602052604090206003015490565b600160a060020a03166000908152600160208190526040909120015490565b600054600160a060020a031681565b600160a060020a03166000818152600360205260408120805460ff191660019081179091556002805491820181559091527f405787fa12a823e0f2b7631cc41b3ba8828b3321ca811111fa75cd3aa3bb5ace01805473ffffffffffffffffffffffffffffffffffffffff19169091179055565b600080826004811115610e9757fe5b1415610ea557506000610421565b6001826004811115610eb357fe5b1415610ec157506001610421565b6002826004811115610ecf57fe5b1415610edd57506002610421565b6003826004811115610eeb57fe5b1415610ef957506003610421565b50607f919050565b600082820183811015610f1357600080fd5b9392505050565b600160a060020a0381166000908152600360205260408120805460ff191690555b600254811015611002576002805482908110610f5357fe5b600091825260209091200154600160a060020a0383811691161415610ffa57600280546000198101908110610f8457fe5b60009182526020909120015460028054600160a060020a039092169183908110610faa57fe5b6000918252602090912001805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a03929092169190911790556002805490610ff3906000198301611007565b5050611004565b600101610f3b565b505b50565b81548183558181111561102b5760008381526020902061102b918101908301611030565b505050565b610a5d91905b8082111561104a5760008155600101611036565b509056fea165627a7a72305820314d44dcd93921ac612d2a7731fd603fffd57fa2bfa944ecd232934b1f8d5d230029`
+const NextyGovernanceBin = `0x608060405234801561001057600080fd5b506040516112753803806112758339810180604052608081101561003357600080fd5b815160208301516040840151606085018051939592949193918301929164010000000081111561006257600080fd5b8201602081018481111561007557600080fd5b815185602082028301116401000000008211171561009257600080fd5b505060058054600160a060020a031916600160a060020a03891617905560038690556004859055925060009150505b815181101561025f57600082828151811015156100da57fe5b6020908102919091018101518254600181018455600093845291909220018054600160a060020a031916600160a060020a03909216919091179055815182908290811061012357fe5b9060200190602002015160016000848481518110151561013f57fe5b90602001906020020151600160a060020a0316600160a060020a0316815260200190815260200160002060006101000a815481600160a060020a030219169083600160a060020a03160217905550818181518110151561019b57fe5b906020019060200201516002600084848151811015156101b757fe5b90602001906020020151600160a060020a0316600160a060020a0316815260200190815260200160002060020160006101000a815481600160a060020a030219169083600160a060020a03160217905550600160026000848481518110151561021c57fe5b6020908102909101810151600160a060020a03168252810191909152604001600020805460ff1916600183600481111561025257fe5b02179055506001016100c1565b5050505050611002806102736000396000f3fe608060405234801561001057600080fd5b506004361061011d576000357c0100000000000000000000000000000000000000000000000000000000900480638943b62c116100b4578063c690873911610083578063c690873914610329578063d66d9e1914610331578063f8b2cb4f14610339578063fc0c546a1461035f5761011d565b80638943b62c146102b857806397f735d5146102de5780639b212d0114610304578063b6b55f251461030c5761011d565b806330ccebb5116100f057806330ccebb5146101e15780633ccfd60b1461021957806355235d471461022157806373b9aa91146102475761011d565b806302a18484146101225780630a9a3f071461015c5780632079fb9a1461019e57806328ffe6c8146101bb575b600080fd5b6101486004803603602081101561013857600080fd5b5035600160a060020a0316610367565b604080519115158252519081900360200190f35b6101826004803603602081101561017257600080fd5b5035600160a060020a03166103f5565b60408051600160a060020a039092168252519081900360200190f35b610182600480360360208110156101b457600080fd5b5035610417565b610148600480360360208110156101d157600080fd5b5035600160a060020a031661043f565b610207600480360360208110156101f757600080fd5b5035600160a060020a0316610804565b60408051918252519081900360200190f35b610148610829565b6102076004803603602081101561023757600080fd5b5035600160a060020a0316610a05565b61026d6004803603602081101561025d57600080fd5b5035600160a060020a0316610a23565b6040518085600481111561027d57fe5b60ff16815260200184815260200183600160a060020a0316600160a060020a0316815260200182815260200194505050505060405180910390f35b610182600480360360208110156102ce57600080fd5b5035600160a060020a0316610a59565b610148600480360360208110156102f457600080fd5b5035600160a060020a0316610a74565b610207610aa6565b6101486004803603602081101561032257600080fd5b5035610aac565b610207610bc7565b610148610bcd565b6102076004803603602081101561034f57600080fd5b5035600160a060020a0316610da9565b610182610dc7565b60006001600160a060020a03831660009081526002602052604090205460ff16600481111561039257fe5b141580156103c757506004600160a060020a03831660009081526002602052604090205460ff1660048111156103c457fe5b14155b80156103ed5750600160a060020a03821660009081526002602052604090206003015443115b90505b919050565b600160a060020a03908116600090815260026020819052604090912001541690565b600080548290811061042557fe5b600091825260209091200154600160a060020a0316905081565b600060043360009081526002602052604090205460ff16600481111561046157fe5b14156104b7576040805160e560020a62461bcd02815260206004820152600760248201527f62616e6e65642000000000000000000000000000000000000000000000000000604482015290519081900360640190fd5b60013360009081526002602052604090205460ff1660048111156104d757fe5b141561052d576040805160e560020a62461bcd02815260206004820152600f60248201527f616c7265616479206a6f696e6564200000000000000000000000000000000000604482015290519081900360640190fd5b600354336000908152600260205260409020600101541015610599576040805160e560020a62461bcd02815260206004820152600e60248201527f6e6f7420656e6f756768206e7466000000000000000000000000000000000000604482015290519081900360640190fd5b600160a060020a03808316600090815260016020526040902054839116151561060c576040805160e560020a62461bcd02815260206004820152601360248201527f7369676e657220616c7265616479207573656400000000000000000000000000604482015290519081900360640190fd5b600160a060020a038116151561066c576040805160e560020a62461bcd02815260206004820152600b60248201527f7369676e6572207a65726f000000000000000000000000000000000000000000604482015290519081900360640190fd5b600160a060020a0381163014156106cd576040805160e560020a62461bcd02815260206004820152601760248201527f73616d6520636f6e747261637427732061646472657373000000000000000000604482015290519081900360640190fd5b600160a060020a03811633141561072e576040805160e560020a62461bcd02815260206004820152601560248201527f73616d652073656e646572277320616464726573730000000000000000000000604482015290519081900360640190fd5b336000908152600260208190526040909120908101805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a03861617905580546001919060ff191682800217905550600160a060020a0383166000908152600160205260409020805473ffffffffffffffffffffffffffffffffffffffff1916331790556107b883610dd6565b60408051338152600160a060020a038516602082015281517f7702dccda75540ad1dca8d5276c048f4a5c0e4203f6da4be214bfb1901b203ea929181900390910190a150600192915050565b600160a060020a0381166000908152600260205260408120546103ed9060ff16610e32565b600060043360009081526002602052604090205460ff16600481111561084b57fe5b14156108a1576040805160e560020a62461bcd02815260206004820152600760248201527f62616e6e65642000000000000000000000000000000000000000000000000000604482015290519081900360640190fd5b6108aa33610367565b1515610900576040805160e560020a62461bcd02815260206004820181905260248201527f756e61626c6520746f20776974686472617720617420746865206d6f6d656e74604482015290519081900360640190fd5b33600081815260026020908152604080832060018101805490859055815460ff191660031790915560055482517fa9059cbb00000000000000000000000000000000000000000000000000000000815260048101969096526024860182905291519094600160a060020a039092169363a9059cbb93604480850194919392918390030190829087803b15801561099557600080fd5b505af11580156109a9573d6000803e3d6000fd5b505050506040513d60208110156109bf57600080fd5b5050604080513381526020810183905281517f7084f5476618d8e60b11ef0d7d3f06914655adb8793e28ff7f018d4c76d505d5929181900390910190a160019150505b90565b600160a060020a031660009081526002602052604090206003015490565b6002602081905260009182526040909120805460018201549282015460039092015460ff9091169291600160a060020a03169084565b600160205260009081526040902054600160a060020a031681565b60006004600160a060020a03831660009081526002602052604090205460ff166004811115610a9f57fe5b1492915050565b60045481565b600554604080517f23b872dd000000000000000000000000000000000000000000000000000000008152336004820152306024820152604481018490529051600092600160a060020a0316916323b872dd91606480830192602092919082900301818787803b158015610b1e57600080fd5b505af1158015610b32573d6000803e3d6000fd5b505050506040513d6020811015610b4857600080fd5b505033600090815260026020526040902060010154610b6d908363ffffffff610eab16565b3360008181526002602090815260409182902060010193909355805191825291810184905281517f2da466a7b24304f47e87fa2e1e5a81b9831ce54fec19055ce277ca2f39ba42c4929181900390910190a1506001919050565b60035481565b600060043360009081526002602052604090205460ff166004811115610bef57fe5b1415610c45576040805160e560020a62461bcd02815260206004820152600760248201527f62616e6e65642000000000000000000000000000000000000000000000000000604482015290519081900360640190fd5b60013360009081526002602052604090205460ff166004811115610c6557fe5b14610cba576040805160e560020a62461bcd02815260206004820152600b60248201527f6e6f74206a6f696e656420000000000000000000000000000000000000000000604482015290519081900360640190fd5b336000908152600260208190526040909120808201805473ffffffffffffffffffffffffffffffffffffffff198116909155815460ff19169092179055600454600160a060020a0390911690610d109043610eab565b33600090815260026020908152604080832060030193909355600160a060020a03841682526001905220805473ffffffffffffffffffffffffffffffffffffffff19169055610d5e81610ec4565b60408051338152600160a060020a038316602082015281517f4b9ee4dd061ba088b22898a02491f3896a4a580c6cda8783ca579ee159f8e8c5929181900390910190a1600191505090565b600160a060020a031660009081526002602052604090206001015490565b600554600160a060020a031681565b600080546001810182559080527f290decd9548b62a8d60345a988386fc84ba6bc95484008f6362f93160ef3e56301805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a0392909216919091179055565b600080826004811115610e4157fe5b1415610e4f575060006103f0565b6001826004811115610e5d57fe5b1415610e6b575060016103f0565b6002826004811115610e7957fe5b1415610e87575060026103f0565b6003826004811115610e9557fe5b1415610ea3575060036103f0565b50607f919050565b600082820183811015610ebd57600080fd5b9392505050565b60005b600054811015610f8a576000805482908110610edf57fe5b600091825260209091200154600160a060020a0383811691161415610f8257600080546000198101908110610f1057fe5b60009182526020822001548154600160a060020a03909116919083908110610f3457fe5b60009182526020822001805473ffffffffffffffffffffffffffffffffffffffff1916600160a060020a039390931692909217909155805490610f7b906000198301610f8f565b5050610f8c565b600101610ec7565b505b50565b815481835581811115610fb357600083815260209020610fb3918101908301610fb8565b505050565b610a0291905b80821115610fd25760008155600101610fbe565b509056fea165627a7a7230582056a374290c1efcbc416f13e7d57b9b0c89826ae44caf0e19e0497e3536a180180029`
 
 // DeployNextyGovernance deploys a new Ethereum contract, binding an instance of NextyGovernance to it.
-func DeployNextyGovernance(auth *bind.TransactOpts, backend bind.ContractBackend, _token common.Address, _sealers []common.Address) (common.Address, *types.Transaction, *NextyGovernance, error) {
+func DeployNextyGovernance(auth *bind.TransactOpts, backend bind.ContractBackend, _token common.Address, _stakeRequire *big.Int, _stakeLockHeight *big.Int, _signers []common.Address) (common.Address, *types.Transaction, *NextyGovernance, error) {
 	parsed, err := abi.JSON(strings.NewReader(NextyGovernanceABI))
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
-	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(NextyGovernanceBin), backend, _token, _sealers)
+	address, tx, contract, err := bind.DeployContract(auth, parsed, common.FromHex(NextyGovernanceBin), backend, _token, _stakeRequire, _stakeLockHeight, _signers)
 	if err != nil {
 		return common.Address{}, nil, nil, err
 	}
@@ -774,82 +774,48 @@ func (_NextyGovernance *NextyGovernanceTransactorRaw) Transact(opts *bind.Transa
 	return _NextyGovernance.Contract.contract.Transact(opts, method, params...)
 }
 
-// LOCKDURATION is a free data retrieval call binding the contract method 0x485d3834.
+// Account is a free data retrieval call binding the contract method 0x73b9aa91.
 //
-// Solidity: function LOCK_DURATION() constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceCaller) LOCKDURATION(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _NextyGovernance.contract.Call(opts, out, "LOCK_DURATION")
-	return *ret0, err
+// Solidity: function account( address) constant returns(status uint8, balance uint256, signer address, unlockHeight uint256)
+func (_NextyGovernance *NextyGovernanceCaller) Account(opts *bind.CallOpts, arg0 common.Address) (struct {
+	Status       uint8
+	Balance      *big.Int
+	Signer       common.Address
+	UnlockHeight *big.Int
+}, error) {
+	ret := new(struct {
+		Status       uint8
+		Balance      *big.Int
+		Signer       common.Address
+		UnlockHeight *big.Int
+	})
+	out := ret
+	err := _NextyGovernance.contract.Call(opts, out, "account", arg0)
+	return *ret, err
 }
 
-// LOCKDURATION is a free data retrieval call binding the contract method 0x485d3834.
+// Account is a free data retrieval call binding the contract method 0x73b9aa91.
 //
-// Solidity: function LOCK_DURATION() constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceSession) LOCKDURATION() (*big.Int, error) {
-	return _NextyGovernance.Contract.LOCKDURATION(&_NextyGovernance.CallOpts)
+// Solidity: function account( address) constant returns(status uint8, balance uint256, signer address, unlockHeight uint256)
+func (_NextyGovernance *NextyGovernanceSession) Account(arg0 common.Address) (struct {
+	Status       uint8
+	Balance      *big.Int
+	Signer       common.Address
+	UnlockHeight *big.Int
+}, error) {
+	return _NextyGovernance.Contract.Account(&_NextyGovernance.CallOpts, arg0)
 }
 
-// LOCKDURATION is a free data retrieval call binding the contract method 0x485d3834.
+// Account is a free data retrieval call binding the contract method 0x73b9aa91.
 //
-// Solidity: function LOCK_DURATION() constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceCallerSession) LOCKDURATION() (*big.Int, error) {
-	return _NextyGovernance.Contract.LOCKDURATION(&_NextyGovernance.CallOpts)
-}
-
-// MINNTFAMOUNT is a free data retrieval call binding the contract method 0xb22ff454.
-//
-// Solidity: function MIN_NTF_AMOUNT() constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceCaller) MINNTFAMOUNT(opts *bind.CallOpts) (*big.Int, error) {
-	var (
-		ret0 = new(*big.Int)
-	)
-	out := ret0
-	err := _NextyGovernance.contract.Call(opts, out, "MIN_NTF_AMOUNT")
-	return *ret0, err
-}
-
-// MINNTFAMOUNT is a free data retrieval call binding the contract method 0xb22ff454.
-//
-// Solidity: function MIN_NTF_AMOUNT() constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceSession) MINNTFAMOUNT() (*big.Int, error) {
-	return _NextyGovernance.Contract.MINNTFAMOUNT(&_NextyGovernance.CallOpts)
-}
-
-// MINNTFAMOUNT is a free data retrieval call binding the contract method 0xb22ff454.
-//
-// Solidity: function MIN_NTF_AMOUNT() constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceCallerSession) MINNTFAMOUNT() (*big.Int, error) {
-	return _NextyGovernance.Contract.MINNTFAMOUNT(&_NextyGovernance.CallOpts)
-}
-
-// Coinbases is a free data retrieval call binding the contract method 0x0ebf0de7.
-//
-// Solidity: function coinbases( uint256) constant returns(address)
-func (_NextyGovernance *NextyGovernanceCaller) Coinbases(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _NextyGovernance.contract.Call(opts, out, "coinbases", arg0)
-	return *ret0, err
-}
-
-// Coinbases is a free data retrieval call binding the contract method 0x0ebf0de7.
-//
-// Solidity: function coinbases( uint256) constant returns(address)
-func (_NextyGovernance *NextyGovernanceSession) Coinbases(arg0 *big.Int) (common.Address, error) {
-	return _NextyGovernance.Contract.Coinbases(&_NextyGovernance.CallOpts, arg0)
-}
-
-// Coinbases is a free data retrieval call binding the contract method 0x0ebf0de7.
-//
-// Solidity: function coinbases( uint256) constant returns(address)
-func (_NextyGovernance *NextyGovernanceCallerSession) Coinbases(arg0 *big.Int) (common.Address, error) {
-	return _NextyGovernance.Contract.Coinbases(&_NextyGovernance.CallOpts, arg0)
+// Solidity: function account( address) constant returns(status uint8, balance uint256, signer address, unlockHeight uint256)
+func (_NextyGovernance *NextyGovernanceCallerSession) Account(arg0 common.Address) (struct {
+	Status       uint8
+	Balance      *big.Int
+	Signer       common.Address
+	UnlockHeight *big.Int
+}, error) {
+	return _NextyGovernance.Contract.Account(&_NextyGovernance.CallOpts, arg0)
 }
 
 // GetBalance is a free data retrieval call binding the contract method 0xf8b2cb4f.
@@ -904,32 +870,6 @@ func (_NextyGovernance *NextyGovernanceCallerSession) GetCoinbase(_address commo
 	return _NextyGovernance.Contract.GetCoinbase(&_NextyGovernance.CallOpts, _address)
 }
 
-// GetSealer is a free data retrieval call binding the contract method 0x2041d33f.
-//
-// Solidity: function getSealer( address) constant returns(address)
-func (_NextyGovernance *NextyGovernanceCaller) GetSealer(opts *bind.CallOpts, arg0 common.Address) (common.Address, error) {
-	var (
-		ret0 = new(common.Address)
-	)
-	out := ret0
-	err := _NextyGovernance.contract.Call(opts, out, "getSealer", arg0)
-	return *ret0, err
-}
-
-// GetSealer is a free data retrieval call binding the contract method 0x2041d33f.
-//
-// Solidity: function getSealer( address) constant returns(address)
-func (_NextyGovernance *NextyGovernanceSession) GetSealer(arg0 common.Address) (common.Address, error) {
-	return _NextyGovernance.Contract.GetSealer(&_NextyGovernance.CallOpts, arg0)
-}
-
-// GetSealer is a free data retrieval call binding the contract method 0x2041d33f.
-//
-// Solidity: function getSealer( address) constant returns(address)
-func (_NextyGovernance *NextyGovernanceCallerSession) GetSealer(arg0 common.Address) (common.Address, error) {
-	return _NextyGovernance.Contract.GetSealer(&_NextyGovernance.CallOpts, arg0)
-}
-
 // GetStatus is a free data retrieval call binding the contract method 0x30ccebb5.
 //
 // Solidity: function getStatus(_address address) constant returns(uint256)
@@ -956,30 +896,30 @@ func (_NextyGovernance *NextyGovernanceCallerSession) GetStatus(_address common.
 	return _NextyGovernance.Contract.GetStatus(&_NextyGovernance.CallOpts, _address)
 }
 
-// GetUnlockTime is a free data retrieval call binding the contract method 0xdbed1e88.
+// GetUnlockHeight is a free data retrieval call binding the contract method 0x55235d47.
 //
-// Solidity: function getUnlockTime(_address address) constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceCaller) GetUnlockTime(opts *bind.CallOpts, _address common.Address) (*big.Int, error) {
+// Solidity: function getUnlockHeight(_address address) constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceCaller) GetUnlockHeight(opts *bind.CallOpts, _address common.Address) (*big.Int, error) {
 	var (
 		ret0 = new(*big.Int)
 	)
 	out := ret0
-	err := _NextyGovernance.contract.Call(opts, out, "getUnlockTime", _address)
+	err := _NextyGovernance.contract.Call(opts, out, "getUnlockHeight", _address)
 	return *ret0, err
 }
 
-// GetUnlockTime is a free data retrieval call binding the contract method 0xdbed1e88.
+// GetUnlockHeight is a free data retrieval call binding the contract method 0x55235d47.
 //
-// Solidity: function getUnlockTime(_address address) constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceSession) GetUnlockTime(_address common.Address) (*big.Int, error) {
-	return _NextyGovernance.Contract.GetUnlockTime(&_NextyGovernance.CallOpts, _address)
+// Solidity: function getUnlockHeight(_address address) constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceSession) GetUnlockHeight(_address common.Address) (*big.Int, error) {
+	return _NextyGovernance.Contract.GetUnlockHeight(&_NextyGovernance.CallOpts, _address)
 }
 
-// GetUnlockTime is a free data retrieval call binding the contract method 0xdbed1e88.
+// GetUnlockHeight is a free data retrieval call binding the contract method 0x55235d47.
 //
-// Solidity: function getUnlockTime(_address address) constant returns(uint256)
-func (_NextyGovernance *NextyGovernanceCallerSession) GetUnlockTime(_address common.Address) (*big.Int, error) {
-	return _NextyGovernance.Contract.GetUnlockTime(&_NextyGovernance.CallOpts, _address)
+// Solidity: function getUnlockHeight(_address address) constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceCallerSession) GetUnlockHeight(_address common.Address) (*big.Int, error) {
+	return _NextyGovernance.Contract.GetUnlockHeight(&_NextyGovernance.CallOpts, _address)
 }
 
 // IsBanned is a free data retrieval call binding the contract method 0x97f735d5.
@@ -1008,32 +948,6 @@ func (_NextyGovernance *NextyGovernanceCallerSession) IsBanned(_address common.A
 	return _NextyGovernance.Contract.IsBanned(&_NextyGovernance.CallOpts, _address)
 }
 
-// IsCoinbase is a free data retrieval call binding the contract method 0x0d8754ac.
-//
-// Solidity: function isCoinbase( address) constant returns(bool)
-func (_NextyGovernance *NextyGovernanceCaller) IsCoinbase(opts *bind.CallOpts, arg0 common.Address) (bool, error) {
-	var (
-		ret0 = new(bool)
-	)
-	out := ret0
-	err := _NextyGovernance.contract.Call(opts, out, "isCoinbase", arg0)
-	return *ret0, err
-}
-
-// IsCoinbase is a free data retrieval call binding the contract method 0x0d8754ac.
-//
-// Solidity: function isCoinbase( address) constant returns(bool)
-func (_NextyGovernance *NextyGovernanceSession) IsCoinbase(arg0 common.Address) (bool, error) {
-	return _NextyGovernance.Contract.IsCoinbase(&_NextyGovernance.CallOpts, arg0)
-}
-
-// IsCoinbase is a free data retrieval call binding the contract method 0x0d8754ac.
-//
-// Solidity: function isCoinbase( address) constant returns(bool)
-func (_NextyGovernance *NextyGovernanceCallerSession) IsCoinbase(arg0 common.Address) (bool, error) {
-	return _NextyGovernance.Contract.IsCoinbase(&_NextyGovernance.CallOpts, arg0)
-}
-
 // IsWithdrawable is a free data retrieval call binding the contract method 0x02a18484.
 //
 // Solidity: function isWithdrawable(_address address) constant returns(bool)
@@ -1060,48 +974,108 @@ func (_NextyGovernance *NextyGovernanceCallerSession) IsWithdrawable(_address co
 	return _NextyGovernance.Contract.IsWithdrawable(&_NextyGovernance.CallOpts, _address)
 }
 
-// Sealers is a free data retrieval call binding the contract method 0xaa61aef3.
+// SignerCoinbase is a free data retrieval call binding the contract method 0x8943b62c.
 //
-// Solidity: function sealers( address) constant returns(status uint8, balance uint256, coinbase address, unlockTime uint256)
-func (_NextyGovernance *NextyGovernanceCaller) Sealers(opts *bind.CallOpts, arg0 common.Address) (struct {
-	Status     uint8
-	Balance    *big.Int
-	Coinbase   common.Address
-	UnlockTime *big.Int
-}, error) {
-	ret := new(struct {
-		Status     uint8
-		Balance    *big.Int
-		Coinbase   common.Address
-		UnlockTime *big.Int
-	})
-	out := ret
-	err := _NextyGovernance.contract.Call(opts, out, "sealers", arg0)
-	return *ret, err
+// Solidity: function signerCoinbase( address) constant returns(address)
+func (_NextyGovernance *NextyGovernanceCaller) SignerCoinbase(opts *bind.CallOpts, arg0 common.Address) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _NextyGovernance.contract.Call(opts, out, "signerCoinbase", arg0)
+	return *ret0, err
 }
 
-// Sealers is a free data retrieval call binding the contract method 0xaa61aef3.
+// SignerCoinbase is a free data retrieval call binding the contract method 0x8943b62c.
 //
-// Solidity: function sealers( address) constant returns(status uint8, balance uint256, coinbase address, unlockTime uint256)
-func (_NextyGovernance *NextyGovernanceSession) Sealers(arg0 common.Address) (struct {
-	Status     uint8
-	Balance    *big.Int
-	Coinbase   common.Address
-	UnlockTime *big.Int
-}, error) {
-	return _NextyGovernance.Contract.Sealers(&_NextyGovernance.CallOpts, arg0)
+// Solidity: function signerCoinbase( address) constant returns(address)
+func (_NextyGovernance *NextyGovernanceSession) SignerCoinbase(arg0 common.Address) (common.Address, error) {
+	return _NextyGovernance.Contract.SignerCoinbase(&_NextyGovernance.CallOpts, arg0)
 }
 
-// Sealers is a free data retrieval call binding the contract method 0xaa61aef3.
+// SignerCoinbase is a free data retrieval call binding the contract method 0x8943b62c.
 //
-// Solidity: function sealers( address) constant returns(status uint8, balance uint256, coinbase address, unlockTime uint256)
-func (_NextyGovernance *NextyGovernanceCallerSession) Sealers(arg0 common.Address) (struct {
-	Status     uint8
-	Balance    *big.Int
-	Coinbase   common.Address
-	UnlockTime *big.Int
-}, error) {
-	return _NextyGovernance.Contract.Sealers(&_NextyGovernance.CallOpts, arg0)
+// Solidity: function signerCoinbase( address) constant returns(address)
+func (_NextyGovernance *NextyGovernanceCallerSession) SignerCoinbase(arg0 common.Address) (common.Address, error) {
+	return _NextyGovernance.Contract.SignerCoinbase(&_NextyGovernance.CallOpts, arg0)
+}
+
+// Signers is a free data retrieval call binding the contract method 0x2079fb9a.
+//
+// Solidity: function signers( uint256) constant returns(address)
+func (_NextyGovernance *NextyGovernanceCaller) Signers(opts *bind.CallOpts, arg0 *big.Int) (common.Address, error) {
+	var (
+		ret0 = new(common.Address)
+	)
+	out := ret0
+	err := _NextyGovernance.contract.Call(opts, out, "signers", arg0)
+	return *ret0, err
+}
+
+// Signers is a free data retrieval call binding the contract method 0x2079fb9a.
+//
+// Solidity: function signers( uint256) constant returns(address)
+func (_NextyGovernance *NextyGovernanceSession) Signers(arg0 *big.Int) (common.Address, error) {
+	return _NextyGovernance.Contract.Signers(&_NextyGovernance.CallOpts, arg0)
+}
+
+// Signers is a free data retrieval call binding the contract method 0x2079fb9a.
+//
+// Solidity: function signers( uint256) constant returns(address)
+func (_NextyGovernance *NextyGovernanceCallerSession) Signers(arg0 *big.Int) (common.Address, error) {
+	return _NextyGovernance.Contract.Signers(&_NextyGovernance.CallOpts, arg0)
+}
+
+// StakeLockHeight is a free data retrieval call binding the contract method 0x9b212d01.
+//
+// Solidity: function stakeLockHeight() constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceCaller) StakeLockHeight(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _NextyGovernance.contract.Call(opts, out, "stakeLockHeight")
+	return *ret0, err
+}
+
+// StakeLockHeight is a free data retrieval call binding the contract method 0x9b212d01.
+//
+// Solidity: function stakeLockHeight() constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceSession) StakeLockHeight() (*big.Int, error) {
+	return _NextyGovernance.Contract.StakeLockHeight(&_NextyGovernance.CallOpts)
+}
+
+// StakeLockHeight is a free data retrieval call binding the contract method 0x9b212d01.
+//
+// Solidity: function stakeLockHeight() constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceCallerSession) StakeLockHeight() (*big.Int, error) {
+	return _NextyGovernance.Contract.StakeLockHeight(&_NextyGovernance.CallOpts)
+}
+
+// StakeRequire is a free data retrieval call binding the contract method 0xc6908739.
+//
+// Solidity: function stakeRequire() constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceCaller) StakeRequire(opts *bind.CallOpts) (*big.Int, error) {
+	var (
+		ret0 = new(*big.Int)
+	)
+	out := ret0
+	err := _NextyGovernance.contract.Call(opts, out, "stakeRequire")
+	return *ret0, err
+}
+
+// StakeRequire is a free data retrieval call binding the contract method 0xc6908739.
+//
+// Solidity: function stakeRequire() constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceSession) StakeRequire() (*big.Int, error) {
+	return _NextyGovernance.Contract.StakeRequire(&_NextyGovernance.CallOpts)
+}
+
+// StakeRequire is a free data retrieval call binding the contract method 0xc6908739.
+//
+// Solidity: function stakeRequire() constant returns(uint256)
+func (_NextyGovernance *NextyGovernanceCallerSession) StakeRequire() (*big.Int, error) {
+	return _NextyGovernance.Contract.StakeRequire(&_NextyGovernance.CallOpts)
 }
 
 // Token is a free data retrieval call binding the contract method 0xfc0c546a.
@@ -1153,23 +1127,23 @@ func (_NextyGovernance *NextyGovernanceTransactorSession) Deposit(_amount *big.I
 
 // Join is a paid mutator transaction binding the contract method 0x28ffe6c8.
 //
-// Solidity: function join(_coinbase address) returns(bool)
-func (_NextyGovernance *NextyGovernanceTransactor) Join(opts *bind.TransactOpts, _coinbase common.Address) (*types.Transaction, error) {
-	return _NextyGovernance.contract.Transact(opts, "join", _coinbase)
+// Solidity: function join(_signer address) returns(bool)
+func (_NextyGovernance *NextyGovernanceTransactor) Join(opts *bind.TransactOpts, _signer common.Address) (*types.Transaction, error) {
+	return _NextyGovernance.contract.Transact(opts, "join", _signer)
 }
 
 // Join is a paid mutator transaction binding the contract method 0x28ffe6c8.
 //
-// Solidity: function join(_coinbase address) returns(bool)
-func (_NextyGovernance *NextyGovernanceSession) Join(_coinbase common.Address) (*types.Transaction, error) {
-	return _NextyGovernance.Contract.Join(&_NextyGovernance.TransactOpts, _coinbase)
+// Solidity: function join(_signer address) returns(bool)
+func (_NextyGovernance *NextyGovernanceSession) Join(_signer common.Address) (*types.Transaction, error) {
+	return _NextyGovernance.Contract.Join(&_NextyGovernance.TransactOpts, _signer)
 }
 
 // Join is a paid mutator transaction binding the contract method 0x28ffe6c8.
 //
-// Solidity: function join(_coinbase address) returns(bool)
-func (_NextyGovernance *NextyGovernanceTransactorSession) Join(_coinbase common.Address) (*types.Transaction, error) {
-	return _NextyGovernance.Contract.Join(&_NextyGovernance.TransactOpts, _coinbase)
+// Solidity: function join(_signer address) returns(bool)
+func (_NextyGovernance *NextyGovernanceTransactorSession) Join(_signer common.Address) (*types.Transaction, error) {
+	return _NextyGovernance.Contract.Join(&_NextyGovernance.TransactOpts, _signer)
 }
 
 // Leave is a paid mutator transaction binding the contract method 0xd66d9e19.
@@ -1528,14 +1502,14 @@ func (it *NextyGovernanceJoinedIterator) Close() error {
 
 // NextyGovernanceJoined represents a Joined event raised by the NextyGovernance contract.
 type NextyGovernanceJoined struct {
-	Sealer   common.Address
-	Coinbase common.Address
-	Raw      types.Log // Blockchain specific contextual infos
+	Sealer common.Address
+	Signer common.Address
+	Raw    types.Log // Blockchain specific contextual infos
 }
 
 // FilterJoined is a free log retrieval operation binding the contract event 0x7702dccda75540ad1dca8d5276c048f4a5c0e4203f6da4be214bfb1901b203ea.
 //
-// Solidity: e Joined(_sealer address, _coinbase address)
+// Solidity: e Joined(_sealer address, _signer address)
 func (_NextyGovernance *NextyGovernanceFilterer) FilterJoined(opts *bind.FilterOpts) (*NextyGovernanceJoinedIterator, error) {
 
 	logs, sub, err := _NextyGovernance.contract.FilterLogs(opts, "Joined")
@@ -1547,7 +1521,7 @@ func (_NextyGovernance *NextyGovernanceFilterer) FilterJoined(opts *bind.FilterO
 
 // WatchJoined is a free log subscription operation binding the contract event 0x7702dccda75540ad1dca8d5276c048f4a5c0e4203f6da4be214bfb1901b203ea.
 //
-// Solidity: e Joined(_sealer address, _coinbase address)
+// Solidity: e Joined(_sealer address, _signer address)
 func (_NextyGovernance *NextyGovernanceFilterer) WatchJoined(opts *bind.WatchOpts, sink chan<- *NextyGovernanceJoined) (event.Subscription, error) {
 
 	logs, sub, err := _NextyGovernance.contract.WatchLogs(opts, "Joined")
@@ -1651,14 +1625,14 @@ func (it *NextyGovernanceLeftIterator) Close() error {
 
 // NextyGovernanceLeft represents a Left event raised by the NextyGovernance contract.
 type NextyGovernanceLeft struct {
-	Sealer   common.Address
-	Coinbase common.Address
-	Raw      types.Log // Blockchain specific contextual infos
+	Sealer common.Address
+	Signer common.Address
+	Raw    types.Log // Blockchain specific contextual infos
 }
 
 // FilterLeft is a free log retrieval operation binding the contract event 0x4b9ee4dd061ba088b22898a02491f3896a4a580c6cda8783ca579ee159f8e8c5.
 //
-// Solidity: e Left(_sealer address, _coinbase address)
+// Solidity: e Left(_sealer address, _signer address)
 func (_NextyGovernance *NextyGovernanceFilterer) FilterLeft(opts *bind.FilterOpts) (*NextyGovernanceLeftIterator, error) {
 
 	logs, sub, err := _NextyGovernance.contract.FilterLogs(opts, "Left")
@@ -1670,7 +1644,7 @@ func (_NextyGovernance *NextyGovernanceFilterer) FilterLeft(opts *bind.FilterOpt
 
 // WatchLeft is a free log subscription operation binding the contract event 0x4b9ee4dd061ba088b22898a02491f3896a4a580c6cda8783ca579ee159f8e8c5.
 //
-// Solidity: e Left(_sealer address, _coinbase address)
+// Solidity: e Left(_sealer address, _signer address)
 func (_NextyGovernance *NextyGovernanceFilterer) WatchLeft(opts *bind.WatchOpts, sink chan<- *NextyGovernanceLeft) (event.Subscription, error) {
 
 	logs, sub, err := _NextyGovernance.contract.WatchLogs(opts, "Left")
@@ -1954,7 +1928,7 @@ func (_NextyGovernance *NextyGovernanceFilterer) WatchWithdrawn(opts *bind.Watch
 const SafeMathABI = "[]"
 
 // SafeMathBin is the compiled bytecode used for deploying new contracts.
-const SafeMathBin = `0x604c602c600b82828239805160001a60731460008114601c57601e565bfe5b5030600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea165627a7a723058204cfd93fe5d6521dd58b62f3d22eefec8bf21334ca4bbdaa6ee2f8cf10928fe400029`
+const SafeMathBin = `0x604c602c600b82828239805160001a60731460008114601c57601e565bfe5b5030600052607381538281f3fe73000000000000000000000000000000000000000030146080604052600080fdfea165627a7a72305820138581c5c923b6c9f179b19fa4e4e4affe758a205c47a5c664d688f9de80709c0029`
 
 // DeploySafeMath deploys a new Ethereum contract, binding an instance of SafeMath to it.
 func DeploySafeMath(auth *bind.TransactOpts, backend bind.ContractBackend) (common.Address, *types.Transaction, *SafeMath, error) {
@@ -2110,3 +2084,4 @@ func (_SafeMath *SafeMathTransactorRaw) Transfer(opts *bind.TransactOpts) (*type
 func (_SafeMath *SafeMathTransactorRaw) Transact(opts *bind.TransactOpts, method string, params ...interface{}) (*types.Transaction, error) {
 	return _SafeMath.Contract.contract.Transact(opts, method, params...)
 }
+

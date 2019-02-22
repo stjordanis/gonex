@@ -944,7 +944,9 @@ func deployConsensusContracts(state *state.StateDB, chainConfig *params.ChainCon
 	{
 		// Generate contract code and data using a simulated backend
 		code, storage, err := deployer.DeployContract(func(sim *backends.SimulatedBackend, auth *bind.TransactOpts) (common.Address, error) {
-			address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, signers)
+			stakeRequire := new(big.Int).SetUint64(chainConfig.Dccs.StakeRequire)
+			stakeLockHeight := new(big.Int).SetUint64(chainConfig.Dccs.StakeLockHeight)
+			address, _, _, err := contract.DeployNextyGovernance(auth, sim, params.TokenAddress, stakeRequire, stakeLockHeight, signers)
 			return address, err
 		})
 		if err != nil {

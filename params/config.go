@@ -241,6 +241,9 @@ type DccsConfig struct {
 	Epoch  uint64 `json:"epoch"`  // Epoch length to reset votes and checkpoint
 	// governance smart contract address
 	Contract common.Address `json:"contract,omitempty"`
+	// Governance contract stake params
+	StakeRequire    uint64 `json:"stakeRequire"`    // stake requirement
+	StakeLockHeight uint64 `json:"stakeLockHeight"` // lock time (in blocks) after leaving
 	// ThangLong hardfork
 	ThangLongBlock *big.Int `json:"thangLongBlock,omitempty"` // ThangLong switch block (nil = no fork, 0 = already activated)
 	ThangLongEpoch uint64   `json:"thangLongEpoch"`           // Epoch length to reset votes and checkpoint
